@@ -7,7 +7,7 @@ description: Teach the user through any technical or project problem in a beginn
 
 ## Goal
 
-Turn a concrete problem into a learning session the user can actually understand and reuse.
+Turn a concrete problem into a learning document the user can actually understand and reuse. The normal output of this skill is a Markdown document, not only an inline chat explanation.
 
 This skill is domain-agnostic. Use it for MQTT, Kafka, Redis, HTTP, WebSocket, databases, frontend code, scheduled jobs, parsing logic, performance problems, architecture questions, bug fixes, or any other technical topic. First identify the actual topic from the user's request and the current codebase; do not inherit the topic from the reference example.
 
@@ -77,13 +77,15 @@ Use this reference as a style and structure example only. Do not assume the targ
    - Do not paste giant files.
    - Link to local files when possible.
 
-8. Provide a minimal learning demo when applicable:
+8. Provide a minimal learning demo in every learning document:
+   - This is required, even when the real project cannot be run; use simulated/mock data when needed.
    - Keep it smaller than the real project.
    - Organize the demo in real development order so the user can create a new project and copy/paste files step by step.
    - If the learning topic comes from an existing project, make the demo follow that project's design principles first: module boundaries, package naming, configuration style, dependency management, layering, naming conventions, and runtime entrypoints.
    - Put the exact file path or runtime location immediately above every code block, using labels such as `所属路径：...` or `所属位置：...`.
    - Include config, key classes/functions, interfaces, and a simple test/client.
    - Use detailed Chinese comments that explain what the line does, why it exists, and what may happen if it is removed or misconfigured.
+   - In every minimal-demo code block, every code statement must have a Chinese comment; do not leave uncommented executable statements, declarations, configuration lines, or commands.
    - Add a small architecture diagram based on the demo itself before the code, preferably Mermaid when Markdown output supports it.
    - Explain how to run or call it.
 
@@ -118,9 +120,9 @@ Prefer this structure for learning documents:
 ## 10. 下次遇到怎么判断
 ```
 
-For quick chat answers, compress the same structure into short sections.
+Always create or update a Markdown learning document under `docs/` unless the user gives another path. A brief chat summary may accompany it, but it does not replace the document. The document must focus on the exact topic the user asked to learn, not on a canned example or prior reference topic.
 
-For docs, create Markdown under `docs/` unless the user gives another path.
+Every learning document must include a `最小化学习 demo` section. The demo may use simulated/mock data when real infrastructure, devices, brokers, databases, or third-party services are unavailable. The demo should preserve the core idea of the requested topic while staying small enough to read and run mentally.
 
 ## Teaching Style
 
@@ -181,7 +183,7 @@ Example comparison dimensions:
 
 ## Minimal Demo Rules
 
-A minimal demo should:
+A minimal demo is required for every learning document and should:
 
 - Remove unrelated business complexity.
 - Preserve the key idea.
@@ -208,9 +210,12 @@ A minimal demo should:
   - why it is needed,
   - what problem it prevents,
   - what could go wrong if it is removed or misconfigured.
+- In every minimal-demo code block, every code statement must have a Chinese comment. This includes executable statements, class/function/variable declarations, configuration entries, shell commands, and test/client examples. Prefer concise inline or immediately preceding Chinese comments over large uncommented code blocks.
 - If the demo includes heartbeat, polling, scheduled tasks, retries, queues, or any background behavior, make it visibly observable in logs or UI and document the expected output.
 - Include one request/client example.
 - Include expected output.
+
+Use simulated/mock data when that keeps the lesson focused or avoids external dependencies.
 
 Do not make the demo bigger than the lesson.
 
