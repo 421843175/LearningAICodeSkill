@@ -891,55 +891,55 @@ manual.test 不是 rtcm.*，所以它不会进入批量限流，会立即推给�
 
 ## 9. 最小化学习 demo
 
-下面这个 demo 是一个可以新建工程后复制粘贴运行的最小 Spring Boot WebSocket 项目。
-
-它不依赖 RTK/RTCM 业务，只保留这次要学习的核心能力：
+这个 demo 是一个可以新建工程后复制粘贴运行的最小 Spring Boot WebSocket 项目。因为它是基于当前 `rtk` 工程的 WebSocket 设计来学习，所以它不使用随意的 `com.example.websocketdemo` 分包，而是刻意模仿当前工程的模块和包设计：
 
 所属位置：学习说明，不需要创建文件。
 
 ```text
-1. 后端注册一个 WebSocket 地址。
-2. 前端连接后，后端保存这个连接。
-3. HTTP 接口模拟业务产生很多条实时消息。
-4. 高频消息先进入队列。
-5. 定时线程每 1 秒把队列消息合成 demo.batch 推给前端。
-6. 前端收到 demo.batch 后拆开 payload.items。
+1. 保留 Maven parent + app module 的结构，像当前 rtk-parent + rtk-parser-app。
+2. 启动类放 parserapp 包，像当前 RtkParserApplication。
+3. 配置类放 config 包，像当前 RealtimeOutputProperties。
+4. REST 测试接口放 api 包，像当前 RtcmRealtimeController。
+5. WebSocket 连接、配置、推送工具放 websocket 包，像当前 JsonWebSocketStreamer 这一组类。
+6. YAML 使用分层配置，像当前 rtk.realtime.output。
 ```
 
-### 9.1 第一步：新建工程目录
-
-先新建一个独立工程，名字叫 `websocket-demo`。
+### 9.1 第一步：按当前工程风格新建 demo 目录
 
 所属位置：命令行，不需要创建项目文件。
 
 ```text
-websocket-demo
+rtk-websocket-learning-demo
   ├─ pom.xml
-  ├─ src
-  │  └─ main
-  │     ├─ java
-  │     │  └─ com
-  │     │     └─ example
-  │     │        └─ websocketdemo
-  │     │           ├─ WebSocketDemoApplication.java
-  │     │           ├─ api
-  │     │           │  └─ DemoController.java
-  │     │           └─ websocket
-  │     │              ├─ DemoWebSocketConfig.java
-  │     │              ├─ DemoWebSocketHandler.java
-  │     │              ├─ DemoWebSocketMessage.java
-  │     │              ├─ DemoWebSocketProperties.java
-  │     │              └─ DemoWebSocketStreamer.java
-  │     └─ resources
-  │        └─ application.yml
+  ├─ rtk-parser-app
+  │  ├─ pom.xml
+  │  └─ src
+  │     └─ main
+  │        ├─ java
+  │        │  └─ com
+  │        │     └─ pnt
+  │        │        └─ rtk
+  │        │           ├─ api
+  │        │           │  └─ DemoRealtimeController.java
+  │        │           ├─ config
+  │        │           │  └─ DemoRealtimeOutputProperties.java
+  │        │           ├─ parserapp
+  │        │           │  └─ RtkParserLearningApplication.java
+  │        │           └─ websocket
+  │        │              ├─ DemoJsonWebSocketMessage.java
+  │        │              ├─ DemoJsonWebSocketStreamHandler.java
+  │        │              ├─ DemoJsonWebSocketStreamer.java
+  │        │              └─ DemoRealtimeWebSocketConfig.java
+  │        └─ resources
+  │           └─ application.yml
   └─ demo-websocket.html
 ```
 
-这就是开发顺序：先有工程骨架，再一层一层把后端和前端补进去。
+这套结构是故意贴着当前项目来的。你练完这个 demo，再回到当前项目看 `rtk-parser-app/src/main/java/com/pnt/rtk/websocket`，会更容易对应上。
 
-### 9.2 第二步：写 Maven 依赖
+### 9.2 第二步：写父工程 pom
 
-所属路径：`websocket-demo/pom.xml`
+所属路径：`rtk-websocket-learning-demo/pom.xml`
 
 ```xml
 <?xml version="1.0" encoding="UTF-8"?>
@@ -949,9 +949,8 @@ websocket-demo
     <modelVersion>4.0.0</modelVersion>
 
     <!--
-      使用 Spring Boot parent。
-      为什么需要 parent：
-      它会帮你统一管理 Spring Boot 依赖版本，减少自己手动配版本的麻烦。
+      这里沿用当前工程的 Spring Boot parent 风格。
+      这样 demo 的依赖管理方式和 rtk 工程接近。
     -->
     <parent>
         <groupId>org.springframework.boot</groupId>
@@ -960,40 +959,59 @@ websocket-demo
         <relativePath/>
     </parent>
 
-    <!--
-      下面三个坐标是这个 demo 工程自己的身份。
-      groupId 通常写公司或组织名，这里用 com.example。
-      artifactId 是工程名，这里用 websocket-demo。
-      version 是当前版本。
-    -->
-    <groupId>com.example</groupId>
-    <artifactId>websocket-demo</artifactId>
+    <groupId>com.pnt</groupId>
+    <artifactId>rtk-websocket-learning-demo</artifactId>
     <version>0.0.1-SNAPSHOT</version>
+    <packaging>pom</packaging>
 
     <!--
-      Java 版本使用 17。
-      Spring Boot 3.x 最常见的学习配置就是 Java 17。
+      当前真实工程是多模块结构。
+      demo 虽然只需要 parser app，但仍然保留 module 思维，方便你适应当前项目。
     -->
+    <modules>
+        <module>rtk-parser-app</module>
+    </modules>
+
     <properties>
+        <!-- 当前 rtk 工程使用 Java 17，所以学习 demo 也按 Java 17 写。 -->
         <java.version>17</java.version>
     </properties>
+</project>
+```
+
+### 9.3 第三步：写 parser app 模块 pom
+
+所属路径：`rtk-websocket-learning-demo/rtk-parser-app/pom.xml`
+
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <!--
+      子模块继承父工程。
+      这和当前 rtk-parser-app 继承 rtk-parent 的方式一致。
+    -->
+    <parent>
+        <groupId>com.pnt</groupId>
+        <artifactId>rtk-websocket-learning-demo</artifactId>
+        <version>0.0.1-SNAPSHOT</version>
+        <relativePath>../pom.xml</relativePath>
+    </parent>
+
+    <artifactId>rtk-parser-app</artifactId>
+    <name>rtk-parser-app</name>
 
     <dependencies>
-        <!--
-          提供普通 HTTP REST 接口能力。
-          为什么需要它：
-          后面要写 POST /demo/push，用它模拟“业务系统产生实时数据”。
-        -->
+        <!-- REST 接口需要它，例如 DemoRealtimeController。 -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-web</artifactId>
         </dependency>
 
-        <!--
-          提供 WebSocket 能力。
-          为什么需要它：
-          后面要注册 /demo/ws，让浏览器可以通过 WebSocket 连接后端。
-        -->
+        <!-- WebSocket 注册、Handler、TextMessage 都需要它。 -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-websocket</artifactId>
@@ -1002,10 +1020,7 @@ websocket-demo
 
     <build>
         <plugins>
-            <!--
-              Spring Boot 打包和运行插件。
-              有了它，可以用 mvn spring-boot:run 启动这个 demo。
-            -->
+            <!-- 用于启动 Spring Boot app。 -->
             <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
@@ -1015,130 +1030,121 @@ websocket-demo
 </project>
 ```
 
-### 9.3 第三步：写 application.yml
+### 9.4 第四步：写 YAML 配置
 
-所属路径：`websocket-demo/src/main/resources/application.yml`
+所属路径：`rtk-websocket-learning-demo/rtk-parser-app/src/main/resources/application.yml`
 
 ```yaml
+spring:
+  application:
+    # 命名方式贴近当前 rtk-parser-app。
+    name: rtk-parser-app
+
 server:
-  # 后端服务端口。
-  # 前端连接 ws://localhost:18081/demo/ws 时，18081 就来自这里。
+  # 和当前 parser 应用端口保持一致，方便你迁移理解。
   port: 18081
 
 demo:
-  websocket:
-    # 是否开启批量限流。
-    # true：高频消息先进入队列，再由定时线程批量推送。
-    # false：高频消息来一条发一条，学习时能看到原始效果，但数据多时容易刷屏。
-    batch-enabled: true
+  realtime:
+    output:
+      # 是否开启 WebSocket 批量限流。
+      batch-enabled: true
 
-    # 每隔多少毫秒推送一次批量包。
-    # 1000 表示大约每 1 秒推一次 demo.batch。
-    batch-interval-millis: 1000
+      # 每隔多少毫秒推送一次批量包。
+      batch-interval-millis: 1000
 
-    # 每个批量包最多放多少条原始消息。
-    # 这个值用于控制单个 JSON 包大小。
-    batch-max-items: 100
+      # 每个批量包最多放多少条原始消息。
+      batch-max-items: 100
 ```
 
-### 9.4 第四步：写启动类
+### 9.5 第五步：写启动类
 
-所属路径：`websocket-demo/src/main/java/com/example/websocketdemo/WebSocketDemoApplication.java`
+所属路径：`rtk-websocket-learning-demo/rtk-parser-app/src/main/java/com/pnt/rtk/parserapp/RtkParserLearningApplication.java`
 
 ```java
-package com.example.websocketdemo;
+package com.pnt.rtk.parserapp;
 
+import com.pnt.rtk.config.DemoRealtimeOutputProperties;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
 
-// @SpringBootApplication 是 Spring Boot 应用启动入口。
-// 它会自动扫描 com.example.websocketdemo 以及它下面的子包。
-// 所以后面的 api 包、websocket 包都要放在 com.example.websocketdemo 下面。
-@SpringBootApplication
-public class WebSocketDemoApplication {
+// 当前真实工程的 RtkParserApplication 使用 scanBasePackages = "com.pnt.rtk"。
+// demo 也这么写，是为了让 api/config/websocket/parserapp 这些平级包都能被扫描到。
+@SpringBootApplication(scanBasePackages = "com.pnt.rtk")
+
+// 把 YAML 中 demo.realtime.output 绑定到 DemoRealtimeOutputProperties。
+@EnableConfigurationProperties(DemoRealtimeOutputProperties.class)
+public class RtkParserLearningApplication {
 
     public static void main(String[] args) {
-        // 启动 Spring Boot 应用。
-        // 启动后，HTTP 接口和 WebSocket 地址才会真正监听 18081 端口。
-        SpringApplication.run(WebSocketDemoApplication.class, args);
+        // 启动 demo parser app。
+        SpringApplication.run(RtkParserLearningApplication.class, args);
     }
 }
 ```
 
-### 9.5 第五步：写配置绑定类
+### 9.6 第六步：写配置绑定类
 
-所属路径：`websocket-demo/src/main/java/com/example/websocketdemo/websocket/DemoWebSocketProperties.java`
+所属路径：`rtk-websocket-learning-demo/rtk-parser-app/src/main/java/com/pnt/rtk/config/DemoRealtimeOutputProperties.java`
 
 ```java
-package com.example.websocketdemo.websocket;
+package com.pnt.rtk.config;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
-// @ConfigurationProperties 的作用：
-// 把 application.yml 里 demo.websocket 开头的配置绑定到这个 Java 类。
-// 比如 batch-enabled 会绑定到 batchEnabled。
-@ConfigurationProperties(prefix = "demo.websocket")
-public class DemoWebSocketProperties {
+// 当前真实工程把实时输出配置放在 config 包下。
+// demo 也放在 config 包，方便你回头对应 RealtimeOutputProperties。
+@ConfigurationProperties(prefix = "demo.realtime.output")
+public class DemoRealtimeOutputProperties {
 
-    // 是否开启批量限流。
-    // 默认 true 是为了保护浏览器和后端，避免高频消息来一条发一条。
+    // 是否开启 WebSocket 批量限流。
     private boolean batchEnabled = true;
 
-    // 批量推送间隔，单位是毫秒。
-    // 这个值控制 WebSocket 展示层推送频率，不控制业务生产速度。
+    // 批量推送间隔，单位毫秒。
     private long batchIntervalMillis = 1000;
 
-    // 每个批量包最多包含多少条消息。
-    // 如果这个值太大，单个 JSON 包可能很大；太小，积压消息会分很多批慢慢发。
+    // 每批最多消息数。
     private int batchMaxItems = 100;
 
     public boolean isBatchEnabled() {
-        // 让其他代码可以读取 batchEnabled。
         return batchEnabled;
     }
 
     public void setBatchEnabled(boolean batchEnabled) {
-        // Spring Boot 绑定 YAML 时会调用这个 setter。
         this.batchEnabled = batchEnabled;
     }
 
     public long getBatchIntervalMillis() {
-        // 让定时任务读取批量推送间隔。
         return batchIntervalMillis;
     }
 
     public void setBatchIntervalMillis(long batchIntervalMillis) {
-        // Spring Boot 绑定 YAML 时会调用这个 setter。
         this.batchIntervalMillis = batchIntervalMillis;
     }
 
     public int getBatchMaxItems() {
-        // 让 flush 逻辑知道一次最多取多少条消息。
         return batchMaxItems;
     }
 
     public void setBatchMaxItems(int batchMaxItems) {
-        // Spring Boot 绑定 YAML 时会调用这个 setter。
         this.batchMaxItems = batchMaxItems;
     }
 }
 ```
 
-### 9.6 第六步：写 WebSocket 统一消息结构
+### 9.7 第七步：写 WebSocket 统一消息结构
 
-所属路径：`websocket-demo/src/main/java/com/example/websocketdemo/websocket/DemoWebSocketMessage.java`
+所属路径：`rtk-websocket-learning-demo/rtk-parser-app/src/main/java/com/pnt/rtk/websocket/DemoJsonWebSocketMessage.java`
 
 ```java
-package com.example.websocketdemo.websocket;
+package com.pnt.rtk.websocket;
 
 import java.time.Instant;
 
-// record 适合表示这种“只装数据”的对象。
-// WebSocket 统一消息结构包括：
-// type：事件类型，前端靠它判断怎么处理。
-// emittedAt：后端产生消息的时间。
-// payload：真正的业务数据。
-public record DemoWebSocketMessage(
+// 当前 rtk 工程使用 Java 17，所以 demo 可以使用 record。
+// 如果你的目标是 Java 8，需要改成普通 class。
+public record DemoJsonWebSocketMessage(
         String type,
         Instant emittedAt,
         Object payload
@@ -1146,20 +1152,22 @@ public record DemoWebSocketMessage(
 }
 ```
 
-### 9.7 第七步：写 WebSocket 推送工具类
+### 9.8 第八步：写 WebSocket 推送工具类
 
-所属路径：`websocket-demo/src/main/java/com/example/websocketdemo/websocket/DemoWebSocketStreamer.java`
+所属路径：`rtk-websocket-learning-demo/rtk-parser-app/src/main/java/com/pnt/rtk/websocket/DemoJsonWebSocketStreamer.java`
 
 ```java
-package com.example.websocketdemo.websocket;
+package com.pnt.rtk.websocket;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.pnt.rtk.config.DemoRealtimeOutputProperties;
 import org.springframework.web.socket.TextMessage;
 import org.springframework.web.socket.WebSocketSession;
 
 import java.time.Instant;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -1169,79 +1177,40 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
-public final class DemoWebSocketStreamer {
+// 当前真实工程里 JsonWebSocketStreamer 是静态工具类。
+// demo 也按这个设计写，让业务代码只调用 stream(...)。
+public final class DemoJsonWebSocketStreamer {
 
-    // 保存当前所有在线 WebSocket 连接。
-    // 使用线程安全 Set，是因为连接建立、关闭、HTTP 推送、定时 flush 可能发生在不同线程。
     private static final Set<WebSocketSession> SESSIONS = ConcurrentHashMap.newKeySet();
-
-    // 保存待批量推送的高频消息。
-    // ArrayDeque 在这里当 FIFO 队列使用：addLast 入队，removeFirst 出队。
-    private static final ArrayDeque<DemoWebSocketMessage> QUEUE = new ArrayDeque<>();
-
-    // 队列锁。
-    // ArrayDeque 不是线程安全的，所以入队和出队时要加锁。
+    private static final ArrayDeque<DemoJsonWebSocketMessage> QUEUE = new ArrayDeque<>();
     private static final Object QUEUE_LOCK = new Object();
-
-    // JSON 序列化器。
-    // 先给一个默认值，避免 configure 之前被调用时出现空指针。
     private static ObjectMapper objectMapper = new ObjectMapper().findAndRegisterModules();
-
-    // 是否开启批量。
     private static boolean batchEnabled = true;
-
-    // 批量推送间隔。
     private static long intervalMillis = 1000;
-
-    // 每批最大消息数。
     private static int maxItems = 100;
+    private static ScheduledFuture<?> flushTask;
 
-    // 单线程定时器，用来定时执行 flush。
     private static final ScheduledExecutorService EXECUTOR =
             Executors.newSingleThreadScheduledExecutor(runnable -> {
-                // 给线程起名，后面排查线程问题时更容易看懂。
                 Thread thread = new Thread(runnable, "demo-websocket-flusher");
-                // 设置为守护线程，避免应用退出时被这个学习 demo 的线程卡住。
                 thread.setDaemon(true);
                 return thread;
             });
 
-    // 保存当前定时任务。
-    // 这样 configure 被重复调用时，可以先取消旧任务，避免启动多个 flush 定时器。
-    private static ScheduledFuture<?> flushTask;
-
-    private DemoWebSocketStreamer() {
-        // 私有构造方法表示这个类不应该被 new。
-        // 外部直接调用 DemoWebSocketStreamer.send(...)。
+    private DemoJsonWebSocketStreamer() {
     }
 
-    public static synchronized void configure(ObjectMapper mapper, DemoWebSocketProperties properties) {
-        // 使用 Spring Boot 配好的 ObjectMapper。
-        // copy() 是为了避免静态工具类误改 Spring 容器里的全局 ObjectMapper。
+    public static synchronized void configure(ObjectMapper mapper, DemoRealtimeOutputProperties properties) {
         objectMapper = mapper.copy().findAndRegisterModules();
-
-        // 从 YAML 配置读取是否开启批量。
         batchEnabled = properties.isBatchEnabled();
-
-        // 防呆：最小间隔限制为 100ms。
-        // 如果误配成 0ms，定时任务会疯狂运行，CPU 可能被打满。
         intervalMillis = Math.max(100, properties.getBatchIntervalMillis());
-
-        // 防呆：每批至少 1 条。
-        // 如果误配成 0，flush 永远取不到消息，前端就看不到批量数据。
         maxItems = Math.max(1, properties.getBatchMaxItems());
 
-        // 如果已经启动过定时任务，先取消旧任务。
-        // 这是为了防止重复 configure 时出现多个定时器同时 flush。
         if (flushTask != null) {
             flushTask.cancel(false);
         }
-
-        // 启动定时 flush。
-        // 第一个 intervalMillis：启动后等多久第一次执行。
-        // 第二个 intervalMillis：每次 flush 完成后，再等多久执行下一次。
         flushTask = EXECUTOR.scheduleWithFixedDelay(
-                DemoWebSocketStreamer::flushSafely,
+                DemoJsonWebSocketStreamer::flushSafely,
                 intervalMillis,
                 intervalMillis,
                 TimeUnit.MILLISECONDS
@@ -1249,21 +1218,14 @@ public final class DemoWebSocketStreamer {
     }
 
     public static void register(WebSocketSession session) {
-        // 保存前端连接。
-        // 保存以后，broadcast 才能把消息发给这个前端。
         SESSIONS.add(session);
-
-        // 连接成功消息立即发，不进入批量队列。
-        // 因为前端需要马上知道连接已经成功。
-        sendTo(session, "websocket.connected", Map.of("activeSessions", SESSIONS.size()));
+        Map<String, Object> payload = new LinkedHashMap<>();
+        payload.put("activeSessions", SESSIONS.size());
+        streamTo(session, "websocket.connected", payload);
     }
 
     public static void unregister(WebSocketSession session) {
-        // 连接断开后移除，避免后面继续给失效连接发消息。
         SESSIONS.remove(session);
-
-        // 如果已经没有前端连接，就清空队列。
-        // 因为没人在线时，展示消息继续积压没有意义。
         if (SESSIONS.isEmpty()) {
             synchronized (QUEUE_LOCK) {
                 QUEUE.clear();
@@ -1271,274 +1233,210 @@ public final class DemoWebSocketStreamer {
         }
     }
 
-    public static void send(String type, Object payload) {
-        // 如果没有前端连接，直接返回。
-        // 这样可以避免没人看页面时还浪费 CPU 做 JSON 序列化和网络发送。
+    public static void stream(String type, Object payload) {
         if (SESSIONS.isEmpty()) {
             return;
         }
 
-        // 创建统一消息对象。
-        DemoWebSocketMessage message = new DemoWebSocketMessage(type, Instant.now(), payload);
-
-        // demo.data.* 表示学习 demo 里的高频业务事件。
-        // 这些事件进入队列，等待定时批量推送。
+        DemoJsonWebSocketMessage message = new DemoJsonWebSocketMessage(type, Instant.now(), payload);
         if (batchEnabled && type.startsWith("demo.data.")) {
             synchronized (QUEUE_LOCK) {
                 QUEUE.addLast(message);
             }
             return;
         }
-
-        // 其他低频事件立即广播。
-        // 例如 websocket.connected、websocket.pong、error 等。
         broadcast(message);
     }
 
-    public static void sendTo(WebSocketSession session, String type, Object payload) {
-        // 只给某一个连接发消息。
-        // 适合 pong 或连接欢迎语，不适合全局广播。
-        sendJson(session, new DemoWebSocketMessage(type, Instant.now(), payload));
+    public static void streamTo(WebSocketSession session, String type, Object payload) {
+        sendJson(session, new DemoJsonWebSocketMessage(type, Instant.now(), payload));
     }
 
     private static void flushSafely() {
         try {
-            // 包一层 try/catch，避免 flush 抛异常后定时任务彻底停止。
             flush();
         } catch (RuntimeException e) {
-            // 学习 demo 里简单打印异常。
-            // 真实项目里建议使用日志框架记录。
             e.printStackTrace();
         }
     }
 
     private static void flush() {
-        // 没有连接时不发送。
         if (SESSIONS.isEmpty()) {
             return;
         }
 
-        // 从队列取一批消息到局部变量。
-        // 这样后面 JSON 序列化和网络发送时，不会一直占着 QUEUE_LOCK。
-        List<DemoWebSocketMessage> items = new ArrayList<>();
+        List<DemoJsonWebSocketMessage> items = new ArrayList<>();
         synchronized (QUEUE_LOCK) {
             while (items.size() < maxItems && !QUEUE.isEmpty()) {
                 items.add(QUEUE.removeFirst());
             }
         }
-
-        // 没有待发送消息时，不发送空包。
         if (items.isEmpty()) {
             return;
         }
 
-        // 合成批量包。
-        // 前端收到的顶层 type 是 demo.batch。
-        // 原始消息在 payload.items 里。
-        DemoWebSocketMessage batch = new DemoWebSocketMessage(
-                "demo.batch",
-                Instant.now(),
-                Map.of(
-                        "count", items.size(),
-                        "intervalMillis", intervalMillis,
-                        "items", items
-                )
-        );
-
-        // 把批量包发给所有在线连接。
-        broadcast(batch);
+        Map<String, Object> payload = new LinkedHashMap<>();
+        payload.put("count", items.size());
+        payload.put("intervalMillis", intervalMillis);
+        payload.put("items", items);
+        broadcast(new DemoJsonWebSocketMessage("demo.batch", Instant.now(), payload));
     }
 
-    private static void broadcast(DemoWebSocketMessage message) {
-        // 遍历所有在线连接。
+    private static void broadcast(DemoJsonWebSocketMessage message) {
         for (WebSocketSession session : SESSIONS) {
             sendJson(session, message);
         }
     }
 
-    private static void sendJson(WebSocketSession session, DemoWebSocketMessage message) {
+    private static void sendJson(WebSocketSession session, DemoJsonWebSocketMessage message) {
         try {
-            // 连接已经关闭时，先移除再返回。
             if (!session.isOpen()) {
-                SESSIONS.remove(session);
+                unregister(session);
                 return;
             }
-
-            // Java 对象转 JSON 字符串。
-            String json = objectMapper.writeValueAsString(message);
-
-            // 通过 WebSocket 发送文本消息。
-            session.sendMessage(new TextMessage(json));
+            session.sendMessage(new TextMessage(objectMapper.writeValueAsString(message)));
         } catch (Exception e) {
-            // 发送失败通常说明连接不可用。
-            // 移除后，下次广播不会再尝试这个 session。
-            SESSIONS.remove(session);
+            unregister(session);
         }
     }
 }
 ```
 
-### 9.8 第八步：写 WebSocket 连接处理器
+### 9.9 第九步：写 WebSocket 连接处理器
 
-所属路径：`websocket-demo/src/main/java/com/example/websocketdemo/websocket/DemoWebSocketHandler.java`
+所属路径：`rtk-websocket-learning-demo/rtk-parser-app/src/main/java/com/pnt/rtk/websocket/DemoJsonWebSocketStreamHandler.java`
 
 ```java
-package com.example.websocketdemo.websocket;
+package com.pnt.rtk.websocket;
 
 import org.springframework.web.socket.CloseStatus;
 import org.springframework.web.socket.TextMessage;
 import org.springframework.web.socket.WebSocketSession;
 import org.springframework.web.socket.handler.TextWebSocketHandler;
 
+import java.util.LinkedHashMap;
 import java.util.Map;
 
-// TextWebSocketHandler 是 Spring 提供的文本 WebSocket 处理器。
-// 当前 demo 只收发 JSON 字符串，所以继承它就够了。
-public class DemoWebSocketHandler extends TextWebSocketHandler {
+// 当前真实工程的 JsonWebSocketStreamHandler 只负责连接生命周期。
+// demo 也保持这个边界：连接注册、ping/pong、关闭清理。
+public class DemoJsonWebSocketStreamHandler extends TextWebSocketHandler {
 
     @Override
     public void afterConnectionEstablished(WebSocketSession session) {
-        // 前端连接成功后，保存这个 session。
-        // 不保存的话，后端后面就不知道该把消息发给谁。
-        DemoWebSocketStreamer.register(session);
+        DemoJsonWebSocketStreamer.register(session);
     }
 
     @Override
     protected void handleTextMessage(WebSocketSession session, TextMessage message) {
-        // 前端发 ping，后端回 pong。
-        // 这是最小心跳机制，用来确认连接还活着。
         if ("ping".equalsIgnoreCase(message.getPayload())) {
-            DemoWebSocketStreamer.sendTo(session, "websocket.pong", Map.of("sessionId", session.getId()));
+            Map<String, Object> payload = new LinkedHashMap<>();
+            payload.put("sessionId", session.getId());
+            DemoJsonWebSocketStreamer.streamTo(session, "websocket.pong", payload);
         }
     }
 
     @Override
     public void afterConnectionClosed(WebSocketSession session, CloseStatus status) {
-        // 前端断开后清理 session。
-        // 否则后端集合里会残留无效连接。
-        DemoWebSocketStreamer.unregister(session);
+        DemoJsonWebSocketStreamer.unregister(session);
     }
 
     @Override
     public void handleTransportError(WebSocketSession session, Throwable exception) {
-        // 传输异常时也清理 session。
-        // 这样可以避免异常连接一直留在内存里。
-        DemoWebSocketStreamer.unregister(session);
+        DemoJsonWebSocketStreamer.unregister(session);
     }
 }
 ```
 
-### 9.9 第九步：写 WebSocket 注册配置
+### 9.10 第十步：写 WebSocket 注册配置
 
-所属路径：`websocket-demo/src/main/java/com/example/websocketdemo/websocket/DemoWebSocketConfig.java`
+所属路径：`rtk-websocket-learning-demo/rtk-parser-app/src/main/java/com/pnt/rtk/websocket/DemoRealtimeWebSocketConfig.java`
 
 ```java
-package com.example.websocketdemo.websocket;
+package com.pnt.rtk.websocket;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.pnt.rtk.config.DemoRealtimeOutputProperties;
 import jakarta.annotation.PostConstruct;
-import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.socket.config.annotation.EnableWebSocket;
 import org.springframework.web.socket.config.annotation.WebSocketConfigurer;
 import org.springframework.web.socket.config.annotation.WebSocketHandlerRegistry;
 
-// @Configuration 表示这是 Spring 配置类。
-// Spring Boot 启动时会读取这里的 WebSocket 注册逻辑。
+import java.util.Objects;
+
 @Configuration
-
-// @EnableWebSocket 表示开启 Spring 原生 WebSocket 支持。
 @EnableWebSocket
+public class DemoRealtimeWebSocketConfig implements WebSocketConfigurer {
 
-// 启用 DemoWebSocketProperties 配置绑定。
-// 如果不加它，DemoWebSocketProperties 可能无法注入到构造方法。
-@EnableConfigurationProperties(DemoWebSocketProperties.class)
-public class DemoWebSocketConfig implements WebSocketConfigurer {
-
-    // Spring Boot 自动配置好的 JSON 工具。
     private final ObjectMapper objectMapper;
+    private final DemoRealtimeOutputProperties properties;
 
-    // application.yml 绑定出来的配置。
-    private final DemoWebSocketProperties properties;
-
-    public DemoWebSocketConfig(ObjectMapper objectMapper, DemoWebSocketProperties properties) {
-        // 保存 JSON 工具。
-        this.objectMapper = objectMapper;
-        // 保存批量限流配置。
-        this.properties = properties;
+    public DemoRealtimeWebSocketConfig(ObjectMapper objectMapper, DemoRealtimeOutputProperties properties) {
+        // 构造器注入：如果 Spring 找不到这两个 Bean，应用会启动失败。
+        // requireNonNull 让“不能为 null”这件事对学习者更直观。
+        this.objectMapper = Objects.requireNonNull(objectMapper, "ObjectMapper 注入失败");
+        this.properties = Objects.requireNonNull(properties, "DemoRealtimeOutputProperties 注入失败");
     }
 
     @PostConstruct
     public void init() {
-        // 应用启动后，把 ObjectMapper 和 YAML 配置交给静态工具类。
-        // 因为 DemoWebSocketStreamer 是静态工具类，它自己不是 Spring Bean。
-        DemoWebSocketStreamer.configure(objectMapper, properties);
+        DemoJsonWebSocketStreamer.configure(objectMapper, properties);
     }
 
     @Override
     public void registerWebSocketHandlers(WebSocketHandlerRegistry registry) {
-        // 注册 WebSocket 地址 /demo/ws。
-        // 前端连接 ws://localhost:18081/demo/ws 时，会进入 DemoWebSocketHandler。
-        registry.addHandler(new DemoWebSocketHandler(), "/demo/ws")
-                // 学习 demo 允许任意来源连接，方便直接打开本地 HTML 测试。
-                // 生产环境建议改成你的前端域名。
+        registry.addHandler(new DemoJsonWebSocketStreamHandler(), "/api/demo/realtime/ws")
                 .setAllowedOriginPatterns("*");
     }
 }
 ```
 
-### 9.10 第十步：写 HTTP 接口模拟高频数据
+### 9.11 第十一步：写 HTTP 接口模拟高频数据
 
-所属路径：`websocket-demo/src/main/java/com/example/websocketdemo/api/DemoController.java`
+所属路径：`rtk-websocket-learning-demo/rtk-parser-app/src/main/java/com/pnt/rtk/api/DemoRealtimeController.java`
 
 ```java
-package com.example.websocketdemo.api;
+package com.pnt.rtk.api;
 
-import com.example.websocketdemo.websocket.DemoWebSocketStreamer;
+import com.pnt.rtk.websocket.DemoJsonWebSocketStreamer;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.LinkedHashMap;
 import java.util.Map;
 
-// @RestController 表示这是 HTTP 接口类。
-// 这个类不负责 WebSocket 连接，只负责模拟业务产生实时数据。
 @RestController
-@RequestMapping("/demo")
-public class DemoController {
+@RequestMapping("/api/demo/realtime")
+public class DemoRealtimeController {
 
     @PostMapping("/push")
     public Map<String, Object> push(@RequestParam(defaultValue = "10") int count) {
-        // 模拟 count 条业务消息。
-        // 真实项目里，这些消息可能来自 RTCM 解码、设备上报、订单状态变化等。
         for (int i = 0; i < count; i++) {
-            // type 使用 demo.data.item。
-            // 因为 DemoWebSocketStreamer 里判断 type.startsWith("demo.data.")，
-            // 所以这些消息会进入批量队列，而不是立即一条一条发。
-            DemoWebSocketStreamer.send("demo.data.item", Map.of(
-                    "index", i,
-                    "message", "这是第 " + i + " 条模拟实时数据"
-            ));
+            Map<String, Object> payload = new LinkedHashMap<>();
+            payload.put("index", i);
+            payload.put("message", "这是第 " + i + " 条模拟实时数据");
+            DemoJsonWebSocketStreamer.stream("demo.data.item", payload);
         }
 
-        // HTTP 返回只表示“消息已经交给 WebSocket 工具类”。
-        // 它不表示前端已经收到，因为前端要等下一次定时 flush。
-        return Map.of("accepted", count);
+        Map<String, Object> result = new LinkedHashMap<>();
+        result.put("accepted", count);
+        return result;
     }
 }
 ```
 
-### 9.11 第十一步：写前端测试页面
+### 9.12 第十二步：写前端测试页面
 
-所属路径：`websocket-demo/demo-websocket.html`
+所属路径：`rtk-websocket-learning-demo/demo-websocket.html`
 
 ```html
 <!doctype html>
 <html lang="zh-CN">
 <head>
   <meta charset="UTF-8" />
-  <title>WebSocket Demo</title>
+  <title>RTK Style WebSocket Demo</title>
 </head>
 <body>
   <button id="connect">连接 WebSocket</button>
@@ -1551,48 +1449,27 @@ public class DemoController {
     let heartbeatTimer;
 
     function append(text) {
-      // 统一追加页面日志。
       log.textContent += text + "\n";
     }
 
     function sendPing(reason) {
-      // 发送 ping 前先判断连接状态。
-      // WebSocket.OPEN 表示连接已经建立，可以发送消息。
       if (!ws || ws.readyState !== WebSocket.OPEN) {
         append("心跳未发送：WebSocket 还没有连接成功");
         return;
       }
-
-      // 前端主动发 ping。
-      // 后端 DemoWebSocketHandler 收到 "ping" 后，会返回 websocket.pong。
       ws.send("ping");
-
-      // 把“前端已经发出 ping”也打印出来。
-      // 这样学习时能清楚看到：不是没心跳，而是先有 ping，后有 pong。
       append(`发送 ping：${reason}`);
     }
 
     function startHeartbeat() {
-      // 如果之前已经启动过心跳，先清掉旧定时器。
-      // 这样重复点击“连接 WebSocket”时，不会启动多个心跳定时器。
       if (heartbeatTimer) {
         clearInterval(heartbeatTimer);
       }
-
-      // 连接成功后先立刻发一次 ping。
-      // 这样不用等 5 秒，页面马上能看到心跳效果。
       sendPing("连接成功后立即发送");
-
-      // 每 5 秒自动发一次 ping。
-      // 这就是最小 demo 里的“自动心跳”。
-      heartbeatTimer = setInterval(() => {
-        sendPing("自动心跳");
-      }, 5000);
+      heartbeatTimer = setInterval(() => sendPing("自动心跳"), 5000);
     }
 
     function stopHeartbeat() {
-      // 连接关闭时停止心跳定时器。
-      // 如果不停止，页面会继续尝试向已关闭连接发送 ping。
       if (heartbeatTimer) {
         clearInterval(heartbeatTimer);
         heartbeatTimer = null;
@@ -1600,130 +1477,70 @@ public class DemoController {
     }
 
     function handleMessage(message) {
-      // 如果后端发来的是批量包，就拆开 items。
-      // 拆开以后继续交给 handleMessage，这样前端不用写两套业务处理逻辑。
       if (message.type === "demo.batch") {
         append(`收到批量包：${message.payload.count} 条`);
         message.payload.items.forEach(handleMessage);
         return;
       }
-
-      // 普通业务数据。
-      if (message.type === "demo.data.item") {
-        append(`业务数据：${JSON.stringify(message.payload)}`);
-        return;
-      }
-
-      // 心跳响应。
-      // 后端收到前端 "ping" 文本后，会返回 type = websocket.pong。
       if (message.type === "websocket.pong") {
         append(`收到 pong：${JSON.stringify(message.payload)}`);
         return;
       }
-
-      // connected、pong 等低频事件走这里。
-      append(`其他事件：${message.type} ${JSON.stringify(message.payload)}`);
+      append(`收到事件：${message.type} ${JSON.stringify(message.payload)}`);
     }
 
     document.querySelector("#connect").onclick = () => {
-      // 如果已经有旧连接，先关闭旧连接。
-      // 这样重复点击连接按钮时，不会同时存在多个 WebSocket。
       if (ws) {
         ws.close();
       }
-
-      // 连接后端 WebSocket。
-      // 地址必须和后端 registry.addHandler(..., "/demo/ws") 对上。
-      ws = new WebSocket("ws://localhost:18081/demo/ws");
-
+      ws = new WebSocket("ws://localhost:18081/api/demo/realtime/ws");
       ws.onopen = () => {
-        // onopen 表示浏览器和后端 WebSocket 握手成功。
         append("浏览器 WebSocket 握手成功");
-
-        // 握手成功后启动自动心跳。
         startHeartbeat();
       };
-
-      ws.onmessage = (event) => {
-        // 后端发送的是 JSON 字符串，前端先 JSON.parse。
-        const message = JSON.parse(event.data);
-        handleMessage(message);
-      };
-
+      ws.onmessage = (event) => handleMessage(JSON.parse(event.data));
       ws.onclose = () => {
-        // 连接关闭时提示。
         append("WebSocket 已关闭");
-
-        // 连接关闭后停止自动心跳。
         stopHeartbeat();
       };
     };
 
-    document.querySelector("#ping").onclick = () => {
-      // 手动发送一次 ping。
-      // 这和自动心跳共用同一个 sendPing 方法，避免写两套逻辑。
-      sendPing("手动按钮");
-    };
+    document.querySelector("#ping").onclick = () => sendPing("手动按钮");
   </script>
 </body>
 </html>
 ```
 
-### 9.12 第十二步：运行和测试
+### 9.13 第十三步：运行和测试
 
-所属位置：命令行，在 `websocket-demo` 目录下执行。
+所属位置：命令行，在 `rtk-websocket-learning-demo` 目录下执行。
 
 ```text
-mvn spring-boot:run
+mvn -pl rtk-parser-app spring-boot:run
 ```
 
 所属位置：浏览器地址栏，直接打开本地 HTML 文件。
 
 ```text
-websocket-demo/demo-websocket.html
+rtk-websocket-learning-demo/demo-websocket.html
 ```
-
-打开页面后，先点 `连接 WebSocket`。
 
 所属位置：页面日志，运行现象说明，不需要创建文件。
 
 ```text
 浏览器 WebSocket 握手成功
 发送 ping：连接成功后立即发送
-其他事件：websocket.connected {"activeSessions":1}
+收到事件：websocket.connected {"activeSessions":1}
 收到 pong：{"sessionId":"..."}
 发送 ping：自动心跳
 收到 pong：{"sessionId":"..."}
 ```
 
-如果你看不到 `收到 pong`，优先检查：
-
-所属位置：排查说明，不需要创建文件。
-
-```text
-1. 后端是否已经启动在 18081 端口。
-2. 前端是否真的点击了“连接 WebSocket”。
-3. 浏览器控制台 Network 里 /demo/ws 是否连接成功。
-4. DemoWebSocketHandler.handleTextMessage 是否判断了 "ping"。
-5. 后端返回的 type 是否是 websocket.pong，前端 handleMessage 是否单独处理了这个 type。
-```
-
 所属位置：Apifox、Postman、curl 或浏览器接口测试工具。
 
 ```text
-POST http://localhost:18081/demo/push?count=250
+POST http://localhost:18081/api/demo/realtime/push?count=250
 ```
-
-如果配置是：
-
-对应配置路径：`websocket-demo/src/main/resources/application.yml`
-
-```yaml
-batch-interval-millis: 1000
-batch-max-items: 100
-```
-
-那么前端大概会分几次收到：
 
 所属位置：运行现象说明，不需要创建文件。
 

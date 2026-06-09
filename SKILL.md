@@ -80,6 +80,7 @@ Use this reference as a style and structure example only. Do not assume the targ
 8. Provide a minimal learning demo when applicable:
    - Keep it smaller than the real project.
    - Organize the demo in real development order so the user can create a new project and copy/paste files step by step.
+   - If the learning topic comes from an existing project, make the demo follow that project's design principles first: module boundaries, package naming, configuration style, dependency management, layering, naming conventions, and runtime entrypoints.
    - Put the exact file path or runtime location immediately above every code block, using labels such as `所属路径：...` or `所属位置：...`.
    - Include config, key classes/functions, interfaces, and a simple test/client.
    - Use detailed Chinese comments that explain what the line does, why it exists, and what may happen if it is removed or misconfigured.
@@ -185,6 +186,14 @@ A minimal demo should:
 - Remove unrelated business complexity.
 - Preserve the key idea.
 - Start with a small architecture diagram based on the demo, showing actors, entrypoints, core classes/functions, queues/storage/network boundaries, and output.
+- If the demo is based on a real project, first summarize that project's relevant conventions and then mirror them in the demo:
+  - module layout, such as parent module plus app module,
+  - package layout, such as `api`, `config`, `service`, `websocket`, `parserapp`, or the project's actual package names,
+  - configuration style, such as YAML prefix and properties classes,
+  - dependency style, such as root parent POM and module POM,
+  - framework entrypoint style, such as Spring Boot scan base packages or explicit property binding,
+  - naming style, such as project-specific suffixes or domain names.
+- Do not use generic packages like `com.example.demo` when the user's learning goal is to understand code written for a specific existing project. Use project-like package names in the demo unless the user explicitly asks for a completely neutral standalone demo.
 - Present files in the order a developer would actually create them, such as project skeleton, build file, configuration, application entrypoint, model/config classes, core utility/service, transport adapter, API/controller, client/test page, and run/test commands.
 - Do not use a separate file placement table unless the user explicitly asks for one.
 - Put the exact path or location immediately above every code block:
