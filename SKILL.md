@@ -81,6 +81,7 @@ Use this reference as a style and structure example only. Do not assume the targ
    - This is required, even when the real project cannot be run; use simulated/mock data when needed.
    - Keep it smaller than the real project.
    - Organize the demo in real development order so the user can create a new project and copy/paste files step by step.
+   - Do not collapse the demo into a single monolithic source file except for a tiny algorithm-only lesson with no meaningful project structure; in normal cases, split it into a small but real engineering layout with build file, configuration, entrypoint, model, service, and client/test files.
    - If the learning topic comes from an existing project, make the demo follow that project's design principles first: module boundaries, package naming, configuration style, dependency management, layering, naming conventions, and runtime entrypoints.
    - Put the exact file path or runtime location immediately above every code block, using labels such as `所属路径：...` or `所属位置：...`.
    - Include config, key classes/functions, interfaces, and a simple test/client.
@@ -197,6 +198,7 @@ A minimal demo is required for every learning document and should:
   - naming style, such as project-specific suffixes or domain names.
 - Do not use generic packages like `com.example.demo` when the user's learning goal is to understand code written for a specific existing project. Use project-like package names in the demo unless the user explicitly asks for a completely neutral standalone demo.
 - Present files in the order a developer would actually create them, such as project skeleton, build file, configuration, application entrypoint, model/config classes, core utility/service, transport adapter, API/controller, client/test page, and run/test commands.
+- Prefer a small engineering project layout over a one-file script; the demo should feel like a miniature real project, not a scratchpad.
 - Do not use a separate file placement table unless the user explicitly asks for one.
 - Put the exact path or location immediately above every code block:
   - Use `所属路径：relative/path/File.java` for files the user should create.
