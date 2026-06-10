@@ -322,13 +322,19 @@ For protocol/device-ingestion topics, the judgment must check at least:
 Example:
 
 ```text
-For TCP 8082 NMEA learning, a demo that only shows `inputStream.read(buffer)` plus newline splitting is incomplete. It teaches half-packet/sticky-packet handling, but it does not teach the protocol trust boundary. If the current project has `NmeaLineParser` plus `NmeaGsvDecoder`, the demo must mirror that two-layer design:
+以 NMEA的TCP传输 学习为例：
 
-Tcp byte stream -> candidate NMEA line extraction -> `$` / `*` / checksum / GSV field validation -> trusted GSV message
+如果 demo 只展示 `inputStream.read(buffer)` 加按换行切行，它是不完整的。它只教了半包/粘包处理，没有教协议可信边界。
+
+如果当前项目已经有 `NmeaLineParser` 加 `NmeaGsvDecoder`，判断结果应写为 `符合` 或 `部分符合`，并说明依据。demo 必须贴合项目的两层设计：
+
+TCP 字节流 -> 候选 NMEA 行提取 -> `$` / `*` / checksum / GSV 字段校验 -> 可信 GSV 消息
+
+如果当前项目没有 checksum 或字段校验，判断结果应写为 `不符合` 或 `部分符合`。文档应先写一个贴合当前项目的 demo，让用户看懂现状；然后追加 `企业级补强方案`，说明应补上 checksum、字段数量、字段格式、异常重同步等能力。
 
 The document should state:
-- 做足的地方：line buffering handles half/sticky packets; decoder validates `$`, `*`, checksum, GSV type, and fields.
-- 不足或边界：if the demo omits checksum or field validation, it is only a reading demo, not a production-grade protocol parser.
+- 做足的地方：行缓冲处理半包/粘包；decoder 校验 `$`、`*`、checksum、GSV 类型和字段。
+- 不足或边界：如果 demo 省略 checksum 或字段校验，就必须明确说明它只是读取/切行教学 demo，不是生产级协议解析器。
 ```
 
 ## When The User Is Frustrated
