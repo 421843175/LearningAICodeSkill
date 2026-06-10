@@ -104,6 +104,7 @@ The user may stop at any phase. If the user says `停止`, `先到这里`, `不�
 7. Show core code with comments:
    - Quote only the most important snippets.
    - Add Chinese comments that explain why each line exists.
+   - Hard requirement: line comments must be written on the immediately preceding line of the code they describe; do not use same-line trailing comments.
    - Do not paste giant files.
    - Link to local files when possible.
 
@@ -137,6 +138,7 @@ The user may stop at any phase. If the user says `停止`, `先到这里`, `不�
    - Include config, key classes/functions, interfaces, and a simple test/client.
    - Use detailed Chinese comments that explain what the line does, why it exists, and what may happen if it is removed or misconfigured.
    - In every minimal-demo code block, every code statement must have a Chinese comment; do not leave uncommented executable statements, declarations, configuration lines, or commands.
+   - Hard requirement: every line comment must be placed on the immediately preceding line of the related code or configuration; do not write same-line trailing comments.
    - Add a small architecture diagram based on the demo itself before the code, preferably Mermaid when Markdown output supports it.
    - Mermaid diagram node names that contain Chinese or special characters should be wrapped in double quotes, such as `A["1. 接收 MQTT 消息"] --> B["2. 写入 Redis"]`, to keep the diagram readable.
    - Explain how the user can manually run or call it outside the current project.
@@ -296,7 +298,7 @@ A minimal demo is required after the user confirms the learning focus and should
   - why it is needed,
   - what problem it prevents,
   - what could go wrong if it is removed or misconfigured.
-- In every minimal-demo code block, every code statement must have a Chinese comment. This includes executable statements, class/function/variable declarations, configuration entries, shell commands, and test/client examples. Prefer concise inline or immediately preceding Chinese comments over large uncommented code blocks.
+- In every minimal-demo code block, every code statement must have a Chinese comment. This includes executable statements, class/function/variable declarations, configuration entries, shell commands, and test/client examples. Hard requirement: place each line comment on the immediately preceding line of the related code or configuration; do not use same-line trailing comments.
 - If the demo includes heartbeat, polling, scheduled tasks, retries, queues, or any background behavior, make it visibly observable in logs or UI and document the expected output.
 - Include one request/client example.
 - Include expected output.
