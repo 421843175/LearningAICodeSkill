@@ -121,7 +121,7 @@ Prefer this structure for learning documents:
 ## 10. 下次遇到怎么判断
 ```
 
-Always create or update a Markdown learning document under `docs/` unless the user gives another path. Use the filename format `Lyyyymmdd(文档学习什么).md`, where `yyyymmdd` is the current date and the parentheses contain a short Chinese learning topic, for example `L20260610(学习8080和8082数据获取).md`. A brief chat summary may accompany it, but it does not replace the document. The document must focus on the exact topic the user asked to learn, not on a canned example or prior reference topic.
+Always create or update a Markdown learning document under `docs/learn/` unless the user gives another path. If `docs/learn/` does not exist, create it before writing the document. Use the filename format `Lyyyymmdd(文档学习什么).md`, where `yyyymmdd` is the current date and the parentheses contain a short Chinese learning topic, for example `docs/learn/L20260610(学习8080和8082数据获取).md`. A brief chat summary may accompany it, but it does not replace the document. The document must focus on the exact topic the user asked to learn, not on a canned example or prior reference topic.
 
 Every learning document must include a `最小化学习 demo` section. The demo may use simulated/mock data when real infrastructure, devices, brokers, databases, or third-party services are unavailable. The demo should preserve the core idea of the requested topic while staying small enough to read and run mentally.
 
