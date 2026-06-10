@@ -35,6 +35,29 @@ references/websocket-realtime-learning-example.md
 
 Use this reference as a style and structure example only. Do not assume the target problem is WebSocket, RTCM, Java, Spring Boot, or realtime streaming unless the current user request or codebase confirms it.
 
+## Execution Phases
+
+Always tell the user which learning phase is being executed before doing substantial work. Use these three phases:
+
+1. `阶段一：讲解原理`
+   - Explain the original project/problem first: concept, real project design, data flow/call chain, tradeoffs, core code, and how to judge similar problems.
+   - End this phase with `学习重点确认`, asking the user what they want to learn through a runnable minimal demo.
+   - Tell the user they can continue to phase two, choose a focus, or stop the learning flow.
+
+2. `阶段二：学习最小化demo`
+   - Start only after the user confirms a learning focus, such as `学习 8082 NMEA 切行和 GSV 解码`.
+   - Add the section `最小化demo（关于XXX）`, replacing `XXX` with the confirmed focus.
+   - Build a runnable mini project that follows the Minimal Demo Project Rules.
+   - End by telling the user they can stop, ask questions, or say `追加学习 XXX` to enter phase three.
+
+3. `阶段三：追加学习最小化demo`
+   - Start when the user says `追加学习 XXX` or clearly asks to continue with another learning topic in the same document.
+   - Append a new learning section for `XXX`, then append `最小化demo（关于XXX）`.
+   - Do not overwrite previous explanations or demos.
+   - After each additional demo, tell the user they can stop or continue with another `追加学习 XXX`.
+
+The user may stop at any phase. If the user says `停止`, `先到这里`, `不用继续`, or an equivalent phrase, stop the staged learning workflow and summarize what has already been completed. Do not continue into the next phase unless the user asks.
+
 ## Default Workflow
 
 1. Restate the problem in plain Chinese:
@@ -77,9 +100,23 @@ Use this reference as a style and structure example only. Do not assume the targ
    - Do not paste giant files.
    - Link to local files when possible.
 
-8. Provide a minimal learning demo in every learning document:
-   - This is required, even when the real project cannot be run; use simulated/mock data when needed.
+8. Execute `阶段一：讲解原理` and ask for learning focus confirmation before writing the minimal learning demo project:
+   - Tell the user this is phase one before starting the explanation.
+   - After completing the design explanation, flow/call-chain explanation, tradeoffs, and core code explanation, pause and ask the user what they want to learn deeply next.
+   - Summarize 2-5 concrete learning focus options based on the project context, such as "Kafka raw data chain", "NMEA line parser", "WebSocket push", "RTCM frame parser", or "database connection config".
+   - Wait for the user to confirm a specific focus, such as "学习 Kafka 原始数据链路" or "学习 8082 NMEA 切行和 GSV 解码".
+   - Explicitly tell the user they may stop here instead of continuing to the demo phase.
+   - Do not add the `最小化demo（关于XXX）` section until the user confirms the learning focus.
+   - Once confirmed, append or complete the `最小化demo（关于XXX）` section for exactly that confirmed focus, replacing `XXX` with a short Chinese phrase derived from the user's confirmed learning topic.
+   - If the user later says `追加学习 XXX`, continue in the same learning document when the context clearly refers to an existing document. Append a new learning section for `XXX`, then append the next section named `最小化demo（关于XXX）`; do not overwrite or replace previous learning sections or demos.
+
+9. Execute `阶段二：学习最小化demo` and provide a runnable minimal learning demo project after confirmation:
+   - Tell the user this is phase two before writing the demo.
+   - This is required after the user confirms the learning focus, even when the real project cannot be run; use simulated/mock data when needed.
    - Keep it smaller than the real project.
+   - Hard requirement: if the topic comes from an existing project, inspect that project's build/config files first and make the demo use the same primary development language, language version, framework, and dependency style whenever possible.
+   - Hard requirement: the demo must be a runnable mini project, not just isolated snippets. Include build/config files, source files, run commands, one request/client/example invocation, and expected output.
+   - Hard requirement: validate the demo by running its compile/test/run command whenever local tooling and dependencies permit. If validation cannot run because of missing local tools or blocked dependency downloads, adjust the demo to remove avoidable external dependencies; if it still cannot be validated, clearly mark the exact reason and do not claim it was run.
    - Organize the demo in real development order so the user can create a new project and copy/paste files step by step.
    - Do not collapse the demo into a single monolithic source file except for a tiny algorithm-only lesson with no meaningful project structure; in normal cases, split it into a small but real engineering layout with build file, configuration, entrypoint, model, service, and client/test files.
    - If the learning topic comes from an existing project, make the demo follow that project's design principles first: module boundaries, package naming, configuration style, dependency management, layering, naming conventions, and runtime entrypoints.
@@ -88,9 +125,11 @@ Use this reference as a style and structure example only. Do not assume the targ
    - Use detailed Chinese comments that explain what the line does, why it exists, and what may happen if it is removed or misconfigured.
    - In every minimal-demo code block, every code statement must have a Chinese comment; do not leave uncommented executable statements, declarations, configuration lines, or commands.
    - Add a small architecture diagram based on the demo itself before the code, preferably Mermaid when Markdown output supports it.
+   - Mermaid diagram node names that contain Chinese or special characters should be wrapped in double quotes, such as `A["1. 接收 MQTT 消息"] --> B["2. 写入 Redis"]`, to keep the diagram readable.
    - Explain how to run or call it.
+   - End by telling the user they can stop here, ask questions, or say `追加学习 XXX`.
 
-9. End with a reusable checklist:
+10. End with a reusable checklist:
    - How to recognize this kind of problem next time.
    - What questions to ask.
    - What files to inspect.
@@ -115,15 +154,23 @@ Prefer this structure for learning documents:
 ## 6. 类似设计推荐
 ## 7. 核心代码以及注释
 ## 8. 接口或运行说明
-## 9. 最小化学习 demo
-## 9.1 基于 demo 的架构图
-## 9.2 按开发顺序新建工程并写代码
+## 8. 学习重点确认
+## 9. 最小化demo（关于XXX）（用户确认学习主题后再补充）
+## 9.1 demo 技术栈和可运行性说明
+## 9.2 基于 demo 的架构图
+## 9.3 按开发顺序新建工程并写代码
+## 9.4 运行命令、验证结果和原项目对应关系
 ## 10. 下次遇到怎么判断
+
+## 11. 追加学习：XXX（用户说追加学习后再补充）
+## 12. 最小化demo（关于XXX）
 ```
 
 Always create or update a Markdown learning document under `docs/learn/` unless the user gives another path. If `docs/learn/` does not exist, create it before writing the document. Use the filename format `Lyyyymmdd(文档学习什么).md`, where `yyyymmdd` is the current date and the parentheses contain a short Chinese learning topic, for example `docs/learn/L20260610(学习8080和8082数据获取).md`. A brief chat summary may accompany it, but it does not replace the document. The document must focus on the exact topic the user asked to learn, not on a canned example or prior reference topic.
 
-Every learning document must include a `最小化学习 demo` section. The demo may use simulated/mock data when real infrastructure, devices, brokers, databases, or third-party services are unavailable. The demo should preserve the core idea of the requested topic while staying small enough to read and run mentally.
+Every learning document must include sections up through `学习重点确认` before asking the user what to learn deeply. Only add the `最小化demo（关于XXX）` section after the user confirms the learning focus, and replace `XXX` with the confirmed topic, such as `Kafka原始数据链路`, `8082 NMEA切行和GSV解码`, or `RTCM帧解析`. The demo may use simulated/mock data when real infrastructure, devices, brokers, databases, or third-party services are unavailable, but it must still be structured as a runnable mini project and preserve the confirmed learning topic.
+
+When the user says `追加学习 XXX` or otherwise asks to continue learning another topic in the same document, reopen the existing learning document if the context makes it clear. Append content after the current last section using the next available section numbers. The appended learning content must be a new section such as `## N. 追加学习：XXX`, followed by a new demo section named exactly `## N+1. 最小化demo（关于XXX）`. Replace `XXX` with the short topic from the user's request. The appended demo follows all Minimal Demo Project Rules, including runnable mini project structure, project-matched language/version/framework/dependency style, validation command/result, expected output, and original-project mapping when feasible. Never rewrite, delete, or merge earlier demo sections unless the user explicitly asks for cleanup.
 
 ## Teaching Style
 
@@ -182,13 +229,29 @@ Example comparison dimensions:
 - Frontend ease of use.
 - Risk of over-engineering.
 
-## Minimal Demo Rules
+## Learning Focus Confirmation
 
-A minimal demo is required for every learning document and should:
+Before writing the minimal demo project:
+
+- First summarize the project design, data flow/call chain, tradeoffs, and core code.
+- Then ask the user to confirm what they want to learn through the demo.
+- Offer focused options only when they naturally follow from the topic. Avoid vague choices like "learn everything".
+- If the user already explicitly named the demo focus in the same request, treat that as confirmation and continue.
+- If the user has not confirmed a focus, stop after the confirmation question and wait. Do not write a placeholder demo.
+
+## Minimal Demo Project Rules
+
+A minimal demo project is required after the user confirms the learning focus and should:
 
 - Remove unrelated business complexity.
 - Preserve the key idea.
-- Start with a small architecture diagram based on the demo, showing actors, entrypoints, core classes/functions, queues/storage/network boundaries, and output.
+- Be a complete runnable mini project, not just scattered code snippets.
+- Include build/config files, source files, one client/request/example invocation, exact run commands, and expected output.
+- Use mock or in-memory replacements for infrastructure when that keeps the demo runnable, such as in-memory queues instead of Kafka, fake payloads instead of real devices, or H2 instead of MySQL.
+- Validate the demo by running its compile/test/run command whenever local tooling and dependencies permit. Record the command and result in the learning document. If validation cannot run because of missing local tools or blocked dependency downloads, state the exact blocker and avoid claiming it was executed.
+- Start with a small architecture diagram based on the demo project, showing actors, entrypoints, core classes/functions, queues/storage/network boundaries, and output.
+- Mermaid diagram node names that contain Chinese or special characters should be wrapped in double quotes, such as `A["1. 接收 MQTT 消息"] --> B["2. 写入 Redis"]`, to keep the diagram readable.
+- Hard requirement: when the learning topic comes from an existing project, inspect the current project's build/config files before writing the demo, such as `pom.xml`, `build.gradle`, `package.json`, `pyproject.toml`, `go.mod`, `Cargo.toml`, `.java-version`, `.nvmrc`, or framework config files. The demo must use the same primary development language and language version as the current project whenever that information is available. It should also mirror the project's framework and dependency style, such as Maven vs Gradle, Spring Boot vs plain Java, npm vs pnpm, or FastAPI vs Flask. If the version cannot be determined from local files, state the assumption explicitly in the learning document before the demo.
 - If the demo is based on a real project, first summarize that project's relevant conventions and then mirror them in the demo:
   - module layout, such as parent module plus app module,
   - package layout, such as `api`, `config`, `service`, `websocket`, `parserapp`, or the project's actual package names,
@@ -216,6 +279,7 @@ A minimal demo is required for every learning document and should:
 - If the demo includes heartbeat, polling, scheduled tasks, retries, queues, or any background behavior, make it visibly observable in logs or UI and document the expected output.
 - Include one request/client example.
 - Include expected output.
+- Optional but preferred: when feasible, add a short mapping after the demo that shows how demo files/classes/functions correspond to the original project files/classes/functions, for example `DemoRawParser -> ParsingRawDataConsumer`, and explain what each demo piece intentionally simplifies.
 
 Use simulated/mock data when that keeps the lesson focused or avoids external dependencies.
 
