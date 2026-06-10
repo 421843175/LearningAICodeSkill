@@ -1,14 +1,10 @@
 # 🛠️ Problem Learning Coach (problem-learning-coach)
 
-> **拒绝巨婴，拒绝玩具代码。把大模型重塑为“只给极品图纸、逼新人动手折腾”的工业级技术导师。**
+> **拒绝玩具代码。把大模型重塑成成长的工业级技术导师。**
 
 ---
 
-# 🛠️ Problem Learning Coach (problem-learning-coach)
 
-> **一个纯粹的、无侵入的技术学习与文档沉淀 SKILL。通过将复杂的项目问题提纯为干净的纯文本 Demo，帮助新人理清流程，提供开箱即用的局部参考。**
-
----
 
 ## 🎯 为什么发明这个项目？
 
