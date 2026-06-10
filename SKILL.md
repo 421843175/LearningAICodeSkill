@@ -11,6 +11,10 @@ Turn a concrete problem into a learning document the user can actually understan
 
 This skill is domain-agnostic. Use it for MQTT, Kafka, Redis, HTTP, WebSocket, databases, frontend code, scheduled jobs, parsing logic, performance problems, architecture questions, bug fixes, or any other technical topic. First identify the actual topic from the user's request and the current codebase; do not inherit the topic from the reference example.
 
+## Hard Safety Rule
+
+When executing this skill, do not modify the current project except for creating or appending the learning Markdown document under `docs/learn/` or another user-specified documentation path. Do not edit source code, configuration, tests, build files, scripts, database migrations, assets, or runtime files. Do not create demo project directories or standalone demo files. If the user asks for a real code change, stop using this learning skill for that action and treat it as a separate implementation request.
+
 Write like a patient senior engineer teaching a new graduate:
 
 - Use simple words first.
@@ -76,6 +80,7 @@ The user may stop at any phase. If the user says `停止`, `先到这里`, `不�
    - Find entrypoints, configs, controllers, services, utility classes, tests, and docs.
    - Trace the real call chain before explaining.
    - Prefer actual code references over guessing.
+   - Read project files only; do not edit project files while executing this learning skill.
 
 4. Explain the mental model:
    - Use one short analogy only if it helps.
@@ -116,6 +121,7 @@ The user may stop at any phase. If the user says `停止`, `先到这里`, `不�
    - Tell the user this is phase two before writing the demo.
    - This is required after the user confirms the learning focus, even when the real project cannot be run; use simulated/mock data when needed.
    - Keep it smaller than the real project.
+   - Hard requirement: outside the learning Markdown document itself, do not modify any project file while executing this skill.
    - Hard requirement: append the demo only to the same Markdown learning document under `docs/learn/`; never change the current project source code for the demo.
    - Hard requirement: do not create a demo project directory, do not create standalone demo files, and do not add demo files anywhere in the repository.
    - Hard requirement: if the topic comes from an existing project, inspect that project's build/config files first and make the demo text use the same primary development language, language version, framework, and dependency style whenever possible.
@@ -235,7 +241,7 @@ Example comparison dimensions:
 
 ## Learning Focus Confirmation
 
-Before writing the minimal demo project:
+Before writing the minimal demo section:
 
 - First summarize the project design, data flow/call chain, tradeoffs, and core code.
 - Then ask the user to confirm what they want to learn through the demo.
@@ -253,8 +259,8 @@ A minimal demo is required after the user confirms the learning focus and should
 - Never modify the current project source code for the demo.
 - Never create a demo project directory or standalone demo files in the repository.
 - Include build/config file contents, source file contents, one client/request/example invocation, exact manual run commands, and expected output.
-- Use mock or in-memory replacements for infrastructure when that keeps the demo runnable, such as in-memory queues instead of Kafka, fake payloads instead of real devices, or H2 instead of MySQL.
-- Do not actually run, compile, test, scaffold, or validate the demo. Record this explicitly as a skill rule, then provide complete manual run commands and expected output so the user can run it outside the current project.
+- Use mock or in-memory replacements for infrastructure when that keeps the demo complete and easy to run manually, such as in-memory queues instead of Kafka, fake payloads instead of real devices, or H2 instead of MySQL.
+- Do not actually run, compile, test, scaffold, or validate the demo. Record this explicitly as a skill rule, then provide complete manual run commands and expected output so the user can execute it manually outside the current project.
 - Start with a small architecture diagram based on the demo, showing actors, entrypoints, core classes/functions, queues/storage/network boundaries, and output.
 - Mermaid diagram node names that contain Chinese or special characters should be wrapped in double quotes, such as `A["1. 接收 MQTT 消息"] --> B["2. 写入 Redis"]`, to keep the diagram readable.
 - Hard requirement: when the learning topic comes from an existing project, inspect the current project's build/config files before writing the demo, such as `pom.xml`, `build.gradle`, `package.json`, `pyproject.toml`, `go.mod`, `Cargo.toml`, `.java-version`, `.nvmrc`, or framework config files. The demo text must use the same primary development language and language version as the current project whenever that information is available. It should also mirror the project's framework and dependency style, such as Maven vs Gradle, Spring Boot vs plain Java, npm vs pnpm, or FastAPI vs Flask. If the version cannot be determined from local files, state the assumption explicitly in the learning document before the demo.
@@ -310,6 +316,7 @@ Example:
 
 When code or docs are changed:
 
-- Run relevant tests or at least compile/typecheck if possible.
-- If tests cannot run, say exactly why.
+- For learning-document changes, validate that the Markdown file exists, the new section was appended rather than replacing earlier content, and the demo is represented only as document content.
+- Do not run, compile, test, scaffold, or create files for a minimal learning demo.
+- If non-demo project code is intentionally changed for a separate user request, run the relevant tests or at least compile/typecheck when possible and explain any blockers.
 - For docs, check that files exist and paths are correct.
