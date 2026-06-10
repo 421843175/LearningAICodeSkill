@@ -125,6 +125,9 @@ The user may stop at any phase. If the user says `停止`, `先到这里`, `不�
    - Hard requirement: append the demo only to the same Markdown learning document under `docs/learn/`; never change the current project source code for the demo.
    - Hard requirement: do not create a demo project directory, do not create standalone demo files, and do not add demo files anywhere in the repository.
    - Hard requirement: if the topic comes from an existing project, inspect that project's build/config files first and make the demo text use the same primary development language, language version, framework, and dependency style whenever possible.
+   - Hard requirement: before writing the demo, judge whether the current project implementation for this exact demo focus satisfies enterprise-grade rules for that domain. Add the judgment result to the learning document.
+   - Hard requirement: if the current project satisfies enterprise-grade rules, the demo must mirror the project's enterprise-grade design instead of simplifying away the important safety boundary. If the current project does not satisfy enterprise-grade rules, first write a demo that matches the current project so the user learns the real code, then add an enterprise-grade improvement section explaining how it should be done.
+   - Hard requirement: every minimal demo must explicitly explain `做足的地方` and `不足或边界`. Do not present a simplified teaching demo as if it were production-grade.
    - Hard requirement: the demo must be complete enough for the user to manually create and run outside the current project. Include build/config file contents, source file contents, run commands, one request/client/example invocation, and expected output as Markdown code blocks.
    - Hard requirement: do not actually run, compile, test, scaffold, or validate the demo. Instead, include a `完整性说明` section that states the demo was not executed by Codex because this skill forbids modifying the current project or creating demo projects, and explain what command the user can run manually after copying the files to a separate folder.
    - Organize the demo in real development order so the user can manually create a separate learning project and copy/paste files step by step.
@@ -167,9 +170,11 @@ Prefer this structure for learning documents:
 ## 8. 学习重点确认
 ## 9. 最小化demo（关于XXX）（用户确认学习主题后追加到本文档）
 ## 9.1 demo 技术栈和完整性说明
-## 9.2 基于 demo 的架构图
-## 9.3 按开发顺序展示文件内容
-## 9.4 手动运行命令、预期结果和原项目对应关系
+## 9.2 企业级规则判断
+## 9.3 基于 demo 的架构图
+## 9.4 按开发顺序展示文件内容
+## 9.5 手动运行命令、预期结果和原项目对应关系
+## 9.6 做足的地方和不足
 ## 10. 下次遇到怎么判断
 
 ## 11. 追加学习：XXX（用户说追加学习后再补充）
@@ -255,6 +260,10 @@ A minimal demo is required after the user confirms the learning focus and should
 
 - Remove unrelated business complexity.
 - Preserve the key idea.
+- Before writing demo code, add an `企业级规则判断` subsection to the learning document. Judge the current project's implementation for the exact demo focus against the relevant enterprise-grade rules for that domain, and state whether it is `符合`, `部分符合`, or `不符合`.
+- If the current project is `符合`, make the demo teaching code follow the project's enterprise-grade design. Do not simplify away the key safety, reliability, validation, trust-boundary, resource-boundary, observability, idempotency, concurrency, or failure-handling rule that makes the real project enterprise-grade.
+- If the current project is `部分符合` or `不符合`, first show a demo that faithfully matches the current project so the user understands the code they have, then add `企业级补强方案` describing what a production-grade version should add and why.
+- Every minimal demo must include `做足的地方` and `不足或边界`, even when the current project is enterprise-grade. The user should learn both what is correct and what is intentionally simplified.
 - Be a complete miniature example represented inside the Markdown learning document, not scattered snippets in chat.
 - Never modify the current project source code for the demo.
 - Never create a demo project directory or standalone demo files in the repository.
@@ -296,6 +305,31 @@ A minimal demo is required after the user confirms the learning focus and should
 Use simulated/mock data when that keeps the lesson focused or avoids external dependencies.
 
 Do not make the demo bigger than the lesson.
+
+## Enterprise-Grade Demo Judgment Rules
+
+When the demo topic touches a domain with correctness or reliability risks, judge the current project against that domain before writing the demo. Examples include TCP, serial ports, MQTT payloads, Kafka consumers, binary protocols, NMEA, RTCM, industrial internet/device ingestion, databases, security, concurrency, scheduling, money, permissions, and user data.
+
+For protocol/device-ingestion topics, the judgment must check at least:
+
+- Byte-stream reading is separated from candidate frame/sentence extraction.
+- Candidate extraction is separated from protocol validation and business decoding.
+- `read(buffer)`, delimiter boundaries, and newline boundaries are not treated as trusted business messages by themselves.
+- The protocol layer validates start markers, length/delimiter rules, checksum/CRC when available, field counts, field formats, and allowed message types.
+- The parser handles half packets, sticky packets, malformed input, oversized pending buffers, and session cleanup.
+- The design records or exposes enough source context, such as session ID, source name, source port, sequence, and useful logs or stats.
+
+Example:
+
+```text
+For TCP 8082 NMEA learning, a demo that only shows `inputStream.read(buffer)` plus newline splitting is incomplete. It teaches half-packet/sticky-packet handling, but it does not teach the protocol trust boundary. If the current project has `NmeaLineParser` plus `NmeaGsvDecoder`, the demo must mirror that two-layer design:
+
+Tcp byte stream -> candidate NMEA line extraction -> `$` / `*` / checksum / GSV field validation -> trusted GSV message
+
+The document should state:
+- 做足的地方：line buffering handles half/sticky packets; decoder validates `$`, `*`, checksum, GSV type, and fields.
+- 不足或边界：if the demo omits checksum or field validation, it is only a reading demo, not a production-grade protocol parser.
+```
 
 ## When The User Is Frustrated
 
