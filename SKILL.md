@@ -164,40 +164,52 @@ Prefer this structure for learning documents:
 ## 1. 一句话讲清楚
 ## 2. 这个问题在项目里是什么
 ## 3. 架构和流程
-## 4. 当前设计的好处
-## 5. 潜在不足和坑
+## 4. 易踩坑和优秀实践（✔）
+## 5. 潜在不足与演进（×）
 ## 6. 类似设计推荐
 ## 7. 核心代码以及注释
 ## 8. 接口或运行说明
-## 8. 学习重点确认
-## 9. 最小化demo（关于XXX）（用户确认学习主题后追加到本文档）
-## 9.1 demo 技术栈和完整性说明
-## 9.2 企业级规则判断
-## 9.3 基于 demo 的架构图
-## 9.4 按开发顺序展示文件内容
-## 9.5 手动运行命令、预期结果和原项目对应关系
-## 9.6 做足的地方和不足
-## 10. 下次遇到怎么判断
+## 9. 学习重点确认
+## 10. 最小化demo（关于XXX）（用户确认学习主题后追加到本文档）
+## 10.1 demo 技术栈和完整性说明
+## 10.2 企业级规则判断
+## 10.3 基于 demo 的架构图
+## 10.4 按开发顺序展示文件内容
+## 10.5 手动运行命令、预期结果和原项目对应关系
+## 10.6 做足的地方和不足
+## 11. 下次遇到怎么判断
 
-## 11. 追加学习：XXX（用户说追加学习后再补充）
-## 12. 最小化demo（关于XXX）
+## 12. 追加学习：XXX（用户说追加学习后再补充）
+## 13. 最小化demo（关于XXX）
 ```
 
 Always create or update a Markdown learning document under `docs/learn/` unless the user gives another path. If `docs/learn/` does not exist, create it before writing the document. Use the filename format `Lyyyymmdd(文档学习什么).md`, where `yyyymmdd` is the current date and the parentheses contain a short Chinese learning topic, for example `docs/learn/L20260610(学习8080和8082数据获取).md`. A brief chat summary may accompany it, but it does not replace the document. The document must focus on the exact topic the user asked to learn, not on a canned example or prior reference topic.
 
 Every learning document must include sections up through `学习重点确认` before asking the user what to learn deeply. Only append the `最小化demo（关于XXX）` section after the user confirms the learning focus, and replace `XXX` with the confirmed topic, such as `Kafka原始数据链路`, `8082 NMEA切行和GSV解码`, or `RTCM帧解析`. The demo may use simulated/mock data when real infrastructure, devices, brokers, databases, or third-party services are unavailable, but it must be represented entirely inside the Markdown document as complete file contents, commands, expected output, and original-project mapping. Do not create demo files or modify project files for the demo.
 
-Hard requirement for `潜在不足和坑` sections:
+Hard requirement for `易踩坑和优秀实践（✔）` and `潜在不足与演进（×）` sections:
 
-- Do not present every pitfall as a project defect. Clearly distinguish "easy-to-misunderstand but currently handled well" from "actual design boundary that needs strengthening".
-- Immediately under `## 5. 潜在不足和坑` or any equivalent pitfall section, add a short legend:
-  - `✔ 处理得好`: this is a learning/debugging confusion point, but the current project design is reasonable or already handles the key boundary correctly.
-  - `× 需要补强`: the current project can work, but production-grade reliability, performance, trust-boundary, protocol-boundary, or resource-boundary handling should be strengthened.
-- Add one of these markers directly in every pitfall subtitle, for example:
-  - `### 5.1 第一个坑：把 18080 当作 RTCM 数据端口（✔ 处理得好）`
-  - `### 5.4 第四个坑：当前 RTCM analyzer 没有按 sourcePort=8080 显式过滤（× 需要补强）`
-- In each marked subsection, include a short sentence explaining why that marker was chosen, such as `为什么标 ✔ 处理得好：...` or `为什么标 × 需要补强：...`.
-- Prefer `× 需要补强` over harsh wording such as `处理得不好` when the implementation works but lacks a stronger production boundary.
+- Keep these as two separate chapters and do not recreate a standalone `当前设计的好处` chapter:
+  - `## 4. 易踩坑和优秀实践（✔）`: `✔` means these are technical points that are easy to misunderstand, easy to implement incorrectly, or likely to trigger bugs, but that the current project already handles well.
+  - `## 5. 潜在不足与演进（×）`: `×` means these are real design boundaries and staged tradeoffs that may need strengthening as the system moves toward production or enterprise use.
+- Chapter 4 must organically merge micro pitfall explanation with macro design strengths. In the `当前项目怎么处理` block, explain both the concrete class/method/configuration behavior and the broader design advantage it represents. Do not repeat a separate generic "current design benefits" chapter.
+- Chapter 5 must evaluate shortcomings from industrial engineering angles when relevant, including high concurrency, enterprise-grade boundaries, reliability and recovery, traceability and auditability, observability and operations, security/trust boundaries, performance/resource boundaries, data consistency, idempotency, and maintainability. Explain these as staged compromises or evolution points, not as blanket condemnation.
+- Do not present every pitfall as a project defect. If the current design is reasonable, put it in chapter 4 and explain why it is an excellent practice. If the current design works but lacks a stronger production boundary, put it in chapter 5 and explain the future evolution direction.
+- Immediately under chapter 4, add a short legend explaining that `✔` means "处理得好 / excellent practice worth preserving".
+- Immediately under chapter 5, add a short legend explaining that `×` means "需要补强 / staged limitation and future evolution direction".
+- Do not add `✔` or `×` markers to every subsection title. The marker belongs only in the chapter title. Subsection titles should stay clean, for example:
+  - `### 4.1 第一个坑：把 18080 当作 RTCM 数据端口`
+  - `### 5.1 协议入口边界：RTCM analyzer 没有按 sourcePort=8080 显式过滤`
+- In each subsection, include a short sentence explaining why it belongs in that chapter, such as `为什么归入优秀实践：...` or `为什么归入潜在不足：...`.
+- Each pitfall, excellent-practice, or shortcoming subsection must be complete enough for a beginner to understand and act on. Include these information blocks unless a block is truly not applicable:
+  - `一句话解释`: state the point in plain language.
+  - `为什么会发生`: explain the underlying protocol, framework, architecture, resource-boundary, reliability, or human misunderstanding that creates it.
+  - `当前项目怎么处理`: connect the explanation to actual project classes, methods, configuration, or data flow. For chapter 4, this block must also explain the macro design advantage embodied by the implementation.
+  - `为什么归入本章`: explain whether the current implementation handles it well or needs strengthening.
+  - `怎么判断`: list concrete symptoms, logs, metrics, API responses, files, or code locations to inspect.
+  - `影响和建议`: explain the practical impact; for chapter 5, include a concrete evolution or improvement direction; for chapter 4, explain what not to mistakenly change and why the current practice should be preserved.
+- Do not leave subsections as only a title plus one sentence. Prefer a few short paragraphs and focused bullets over vague warnings.
+- Prefer `×` / `需要补强` over harsh wording such as `处理得不好` when the implementation works but lacks a stronger production boundary.
 
 When the user says `追加学习 XXX` or otherwise asks to continue learning another topic in the same document, reopen the existing learning document if the context makes it clear. Append content after the current last section using the next available section numbers. The appended learning content must be a new section such as `## N. 追加学习：XXX`, followed by a new demo section named exactly `## N+1. 最小化demo（关于XXX）`. Replace `XXX` with the short topic from the user's request. The appended demo follows all Minimal Demo Rules, including complete file contents, project-matched language/version/framework/dependency style, manual run commands, expected output, and original-project mapping when feasible. Never rewrite, delete, or merge earlier demo sections unless the user explicitly asks for cleanup.
 
