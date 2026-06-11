@@ -187,6 +187,18 @@ Always create or update a Markdown learning document under `docs/learn/` unless 
 
 Every learning document must include sections up through `学习重点确认` before asking the user what to learn deeply. Only append the `最小化demo（关于XXX）` section after the user confirms the learning focus, and replace `XXX` with the confirmed topic, such as `Kafka原始数据链路`, `8082 NMEA切行和GSV解码`, or `RTCM帧解析`. The demo may use simulated/mock data when real infrastructure, devices, brokers, databases, or third-party services are unavailable, but it must be represented entirely inside the Markdown document as complete file contents, commands, expected output, and original-project mapping. Do not create demo files or modify project files for the demo.
 
+Hard requirement for `潜在不足和坑` sections:
+
+- Do not present every pitfall as a project defect. Clearly distinguish "easy-to-misunderstand but currently handled well" from "actual design boundary that needs strengthening".
+- Immediately under `## 5. 潜在不足和坑` or any equivalent pitfall section, add a short legend:
+  - `✔ 处理得好`: this is a learning/debugging confusion point, but the current project design is reasonable or already handles the key boundary correctly.
+  - `× 需要补强`: the current project can work, but production-grade reliability, performance, trust-boundary, protocol-boundary, or resource-boundary handling should be strengthened.
+- Add one of these markers directly in every pitfall subtitle, for example:
+  - `### 5.1 第一个坑：把 18080 当作 RTCM 数据端口（✔ 处理得好）`
+  - `### 5.4 第四个坑：当前 RTCM analyzer 没有按 sourcePort=8080 显式过滤（× 需要补强）`
+- In each marked subsection, include a short sentence explaining why that marker was chosen, such as `为什么标 ✔ 处理得好：...` or `为什么标 × 需要补强：...`.
+- Prefer `× 需要补强` over harsh wording such as `处理得不好` when the implementation works but lacks a stronger production boundary.
+
 When the user says `追加学习 XXX` or otherwise asks to continue learning another topic in the same document, reopen the existing learning document if the context makes it clear. Append content after the current last section using the next available section numbers. The appended learning content must be a new section such as `## N. 追加学习：XXX`, followed by a new demo section named exactly `## N+1. 最小化demo（关于XXX）`. Replace `XXX` with the short topic from the user's request. The appended demo follows all Minimal Demo Rules, including complete file contents, project-matched language/version/framework/dependency style, manual run commands, expected output, and original-project mapping when feasible. Never rewrite, delete, or merge earlier demo sections unless the user explicitly asks for cleanup.
 
 ## Teaching Style
