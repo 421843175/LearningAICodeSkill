@@ -1,6 +1,6 @@
 # 考察模式（Inspection Mode）
 
-Use this file only when the user triggers Inspection Mode by saying `进入考察模式`, `你考我一下`, `你问我一下`, or an equivalent request to be quizzed/interviewed about the analyzed system.
+Use this file only when the user triggers project Inspection Mode by saying `学习SKILL考察模式`, `考察模式`, `项目考察模式`, `进入考察模式`, or says `你考我一下` / `你问我一下` while the current context is project mode or a project-analysis document.
 
 ## Goal
 

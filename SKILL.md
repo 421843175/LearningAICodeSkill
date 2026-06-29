@@ -1,6 +1,6 @@
 ---
 name: problem-learning-coach
-description: Teach the user through any technical or project problem in a beginner-friendly way. Use when the user asks to learn from a problem, understand why something happens, review architecture/design, understand code flow, create a learning document, explain a bug/fix, compare designs, or wants Codex to turn any encountered issue into a reusable learning lesson. Also use when the user explicitly says to use 学习SKILL/学习skill in 项目模式/project mode to analyze a whole project, or says 学习SKILL考察模式/学习SKILL测试模式/测试模式/项目测试模式/考察模式/你考我一下/你问我一下 to run the project inspection quiz mode. Normal learning output should be understandable to a new graduate, include project context when available, core code with comments, flow diagrams or call chains when useful, pros/cons, common pitfalls, and a complete minimal demo appended inside the Markdown learning document with detailed Chinese comments and a demo-based architecture diagram when applicable.
+description: Teach the user through any technical or project problem in a beginner-friendly way. Use when the user asks to learn from a problem, understand why something happens, review architecture/design, understand code flow, create a learning document, explain a bug/fix, compare designs, or wants Codex to turn any encountered issue into a reusable learning lesson. Also use when the user explicitly says to use 学习SKILL/学习skill in 项目模式/project mode to analyze a whole project; says 学习SKILL测试模式/测试模式/学习测试模式/测一下我刚学的 to test the current learning document or recently learned topic; or says 学习SKILL考察模式/考察模式/项目考察模式 to run project-mode inspection over the whole project. If the user says 你考我一下/你问我一下, choose learning test mode when the current context is a learning document or recently learned topic, and choose project inspection mode when the current context is project mode or a project-analysis document. Normal learning output should be understandable to a new graduate, include project context when available, core code with comments, flow diagrams or call chains when useful, pros/cons, common pitfalls, and a complete minimal demo appended inside the Markdown learning document with detailed Chinese comments and a demo-based architecture diagram when applicable.
 ---
 
 # Problem Learning Coach
@@ -28,18 +28,30 @@ When the user says `用学习SKILL走项目模式`, `学习SKILL 项目模式`, 
 5. Use the project-mode document path and stage rules from that reference: `doc/project/PyyyyMMdd(<项目或模块名>分析).md`.
 6. If any rule in the normal learning workflow conflicts with project mode, project mode wins for this turn.
 
-### 测试模式 / 项目测试模式
+### 测试模式（学习本体）
 
-When the user says `学习SKILL考察模式`, `学习SKILL测试模式`, `测试模式`, `项目测试模式`, `考察模式`, `进入考察模式`, `你考我一下`, `你问我一下`, or an equivalent request to be quizzed/interviewed while using this learning skill:
+When the user says `学习SKILL测试模式`, `测试模式`, `学习测试模式`, `测一下我刚学的`, or says `你考我一下` / `你问我一下` while the current context is a learning document or recently learned topic:
 
-1. Treat it as the project mode's Inspection Mode, not as a minimal-demo learning phase.
+1. Treat it as the normal learning skill's test mode, not as project-mode Inspection Mode.
+2. Test the current learning document, latest relevant `docs/learn/LyyyyMMdd(...).md`, or recently discussed learning topic.
+3. Do not execute project mode.
+4. Do not read or write `doc/project/` unless the user explicitly switches to `考察模式` or `项目模式`.
+5. Read and strictly follow `references/rules/learning-test-mode.md`.
+6. On entering the mode, output only question 1, then stop and wait for the user's answer.
+7. Persist answered questions according to `references/rules/learning-test-mode.md`; when a learning document exists, append under `# 测试模式` in that same document.
+
+### 考察模式（项目模式子模式）
+
+When the user says `学习SKILL考察模式`, `考察模式`, `项目考察模式`, `进入考察模式`, or says `你考我一下` / `你问我一下` while the current context is project mode or a project-analysis document:
+
+1. Treat it as the project mode's Inspection Mode over the whole project, not as a learning-document test.
 2. Do not execute the normal Problem Learning Coach workflow.
 3. Read `references/project-mode.md` for the surrounding project-analysis context rules and document path rules.
 4. Read and strictly follow `references/rules/inspection-mode.md`.
 5. If a `doc/project/PyyyyMMdd(<项目或模块名>分析).md` analysis document already exists for the current project/context, use it as the grounding document for questions and persistence.
 6. If no project-analysis document exists or the analyzed project/module is ambiguous, inspect the current project enough to ask a grounded first question, and ask concise clarification only when the target project cannot be safely identified.
 7. On entering the mode, output only question 1, then stop and wait for the user's answer.
-8. Persist answered questions according to `references/rules/inspection-mode.md`; do not write inspection records into `docs/learn/`.
+8. Persist answered questions according to `references/rules/inspection-mode.md`; do not write project inspection records into `docs/learn/`.
 
 ## Hard Safety Rule
 
@@ -73,11 +85,12 @@ Mode references:
 
 ```text
 references/project-mode.md
+references/rules/learning-test-mode.md
 references/rules/inspection-mode.md
 references/templates/call-chain-template.md
 ```
 
-Load these only when `Mode Routing` selects project mode or testing/inspection mode.
+Load these only when `Mode Routing` selects project mode, learning test mode, or project inspection mode.
 
 ## Execution Phases
 

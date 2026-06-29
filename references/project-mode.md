@@ -30,9 +30,9 @@ Hard requirement: work in exactly these three stages, but stages 1 and 2 run con
 - Stage 3 output covers L4 business-scenario-driven understanding. Only stage 3 may output `Class.method()`-level chains and scenario design analysis.
 - If stage 2 has not been completed and confirmed, do not output stage 3 details, even if the code has already been inspected.
 
-### 考察模式（Inspection Mode）/ 项目测试模式 - 可选分支机制
+### 考察模式（Inspection Mode）- 可选分支机制
 
-Enter Inspection Mode whenever the user says `学习SKILL考察模式`, `学习SKILL测试模式`, `测试模式`, `项目测试模式`, `考察模式`, `进入考察模式`, `你考我一下`, `你问我一下`, or an equivalent request to be quizzed/interviewed about the analyzed system. After Stage 3 is fully completed, proactively ask whether the user wants to enter Inspection Mode.
+Enter Inspection Mode whenever the user says `学习SKILL考察模式`, `考察模式`, `项目考察模式`, `进入考察模式`, `你考我一下`, `你问我一下`, or an equivalent request to be quizzed/interviewed about the analyzed system. After Stage 3 is fully completed, proactively ask whether the user wants to enter Inspection Mode.
 
 On trigger:
 
