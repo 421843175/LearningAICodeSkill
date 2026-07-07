@@ -1,6 +1,16 @@
 # 考察模式（Inspection Mode）
 
-Use this file only when the user triggers project Inspection Mode by saying `学习SKILL考察模式`, `考察模式`, `项目考察模式`, `进入考察模式`, or says `你考我一下` / `你问我一下` while the current context is project mode or a project-analysis document.
+Use this file only when the user triggers project Inspection Mode by saying `学习SKILL考察模式`, `考察模式`, `项目考察模式`, `进入考察模式`, or when the main `SKILL.md` `Ambiguous Trigger Arbitration Rule` routes `你考我一下` / `你问我一下` to a `doc/project/` or default project-inspection scope.
+
+For `你考我一下` / `你问我一下`, never self-select this file directly. Always obey the main `SKILL.md` arbitration rule first, because learning test mode uses the same ambiguous trigger words.
+
+### Read-Only Sandbox Assertion
+
+Inspection Mode is an absolute read-only sandbox while the current inspection round is active. Until the user exits the current inspection round, do not call any tool that creates, rewrites, patches, modifies, formats, moves, deletes, stages, commits, or otherwise changes physical files.
+
+This read-only assertion outranks normal Problem Learning Coach behavior, Project Mode document writing behavior, and any user request about bugs, fixes, refactors, demos, scripts, tests, configs, or documentation edits. If the user pastes code and asks whether a bug or reference answer should be fixed, discuss the issue in chat only. Do not modify source code, config, tests, scripts, project analysis documents, learning docs, demo files, or any other file while the mode is still active.
+
+If the user wants a real file edit, ask them to exit Inspection Mode first. After the mode has ended, treat the edit as a separate implementation request under the normal tool and validation rules.
 
 ## Goal
 
@@ -29,6 +39,7 @@ Run like a technical interview or architecture review over the whole project. Do
 7. Each question should be grounded in the current codebase and the already written Stage 1-3 analysis, but its scope should target whole-project core logic, core principles, or a high-value slice that reveals them. Do not ask generic textbook questions or isolated local code-trivia questions unless the system analysis proves they are relevant to the project's core design.
 8. The 5 questions must jointly cover the whole project's core logic and core principles: business goals and system boundaries, core business closed loops, module dependency/coupling, core object/data flow, state transitions, concurrency or consistency risks around key state nodes, external/device/client/async integration where relevant, and design tradeoffs.
 9. If the user performs consistently well across answered questions, especially with strong business-closure understanding, state-node awareness, and tradeoff reasoning, you may recommend that the user exit Inspection Mode early instead of continuing to ask more questions. Phrase this as a recommendation, not a forced exit.
+10. If the user interrupts the round with a bug/fix/code-change request, stay in read-only Inspection Mode. Give only chat-level reasoning or say that file edits require exiting Inspection Mode first; do not switch modes or touch files implicitly.
 
 ## Feedback Rules
 
@@ -41,15 +52,16 @@ For each answered question, immediately provide deep feedback in chat:
 
 ## Persistence Rules
 
-1. Persist only answered, non-skipped questions. Skipped questions are not persisted.
-2. Incrementally append the new record to the end of the current document `doc/project/PyyyyMMdd(<项目或模块名>分析).md`.
-3. Apply score-based persistence:
+1. During the active inspection round, do not persist anything to disk. Keep answered question records in chat-visible content only.
+2. Persist only answered, non-skipped questions after the user has exited Inspection Mode or explicitly asks to persist after the round is complete. Skipped questions are not persisted.
+3. When persistence happens after exit, incrementally append the new record to the end of the current document `doc/project/PyyyyMMdd(<项目或模块名>分析).md`.
+4. Apply score-based persistence:
    - If the question score is 8 or above, persist the full record: question, user answer, score, strengths/weaknesses evaluation, and reference answer.
    - If the question score is below 8, persist only the question heading/title and the reference answer. Do not write the user's answer, score, or strengths/weaknesses evaluation into the document; those remain chat-only feedback.
-4. A document may contain only one top-level `# 考察模式` section.
-5. If Inspection Mode is entered more than once, append new `## 问题 N` entries inside the existing `# 考察模式` section instead of creating a second top-level heading.
-6. Do not rewrite, reorganize, polish, or alter the already finalized `阶段一` through `阶段三` architecture-analysis content when appending Inspection Mode records.
-7. If the current analysis document has not been created yet, ask the questions in chat first and persist them once the document path is known. Do not invent a document path that violates the main skill's Document Path rules.
+5. A document may contain only one top-level `# 考察模式` section.
+6. If Inspection Mode is entered more than once, append new `## 问题 N` entries inside the existing `# 考察模式` section instead of creating a second top-level heading.
+7. Do not rewrite, reorganize, polish, or alter the already finalized `阶段一` through `阶段三` architecture-analysis content when appending Inspection Mode records after exit.
+8. If the current analysis document has not been created yet, ask the questions in chat first and persist them once the document path is known after exit. Do not invent a document path that violates the main skill's Document Path rules.
 
 ## Exit Rule
 
@@ -106,7 +118,7 @@ Use this format at the end of the current analysis document. Generate exactly on
 
 ```text
 【考察模式（可选切换）】
-1. 无论在任何时候，只要我输入“进入考察模式”“你考我一下”“你问我一下”，或者在阶段三完全结束后由你主动邀请并获得我确认，系统应立刻暂停当前的常规文档输出，切入“考察面试状态”。
+1. 只要我输入“进入考察模式”，或者在阶段三完全结束后由你主动邀请并获得我确认，系统应立刻暂停当前的常规文档输出，切入“考察面试状态”。如果我输入“你考我一下”“你问我一下”，必须先遵循主 `SKILL.md` 的 `Ambiguous Trigger Arbitration Rule`：当前是 `docs/learn/` 局部学习范围时进入学习测试模式；只有路由到 `doc/project/` 或默认项目考察范围时，才进入本项目考察模式。
 2. 考察模式的硬性要求：
    - 一轮考察总共提出 5 个关于该项目的硬核技术问题。考察范围是整个项目的核心逻辑和核心原理，不考局部代码记忆、语法细节或 API 名字。
    - 问题要围绕业务目标、系统边界、核心闭环、模块协作、对象/数据流、状态流转、关键状态节点、异步/外部/设备/客户端接入链路和设计取舍展开。
@@ -115,8 +127,9 @@ Use this format at the end of the current analysis document. Generate exactly on
    - 如果我回复“跳过”“跳过这题”或 `skip`，你必须跳过当前问题：不评分、不复盘、不写参考答案、不把该题作为已完成反馈记录写入文档，直接提出下一道单独的问题并再次停止等待。
    - 我每回答一个问题，你都要针对该问题进行即时反馈：给出 1-10 的评分，详细拆解我回答的“足（亮点）”与“不足（盲点/技术风险漏掉的点）”，并附带一份基于当前代码的高质量“参考答案”。如果该题低于 8 分，评分、用户回答、足和不足只在聊天中输出，文档里只保留该题题目和参考答案。
    - 问题维度必须覆盖核心业务闭环、模块间依赖耦合、关键状态节点的并发/一致性隐患、选型折中（Trade-offs）。
-   - 将已完成的新一轮考察记录严格按照分数持久化规则增量追加到当前分析文档的末尾（`# 考察模式` 章节）：8 分及以上写【问题、用户回答、评分、评价、参考答案】；8 分以下只写【问题、参考答案】。整篇文档只能存在一个 `# 考察模式`，二次进入时在原章节继续追加。
-   - 追加考察记录时，只能增量追加新问题与反馈；请勿重写、重排、润色或篡改文档前半部分的【阶段一】至【阶段三】已定稿系统架构分析内容。
+   - 活跃考察轮次内属于只读沙箱，不写任何物理文件；已完成的新一轮考察记录只能先保留在聊天上下文中。
+   - 退出考察模式后，或用户明确要求持久化后，才将已完成的新一轮考察记录严格按照分数持久化规则增量追加到当前分析文档的末尾（`# 考察模式` 章节）：8 分及以上写【问题、用户回答、评分、评价、参考答案】；8 分以下只写【问题、参考答案】。整篇文档只能存在一个 `# 考察模式`，二次进入时在原章节继续追加。
+   - 退出后追加考察记录时，只能增量追加新问题与反馈；请勿重写、重排、润色或篡改文档前半部分的【阶段一】至【阶段三】已定稿系统架构分析内容。
 3. 如果我在考察模式中一直表现比较优异，你可以建议我退出考察模式，但不能强制退出。
 4. 考察结束或我输入“退出考察”“退出考察模式”后，你必须先给出一个满分 100 分的总评，只输出给我看，不写入文档；总评要指出我理解较强的地方、可能薄弱的地方和后续建议。然后提示“考察模式已结束，正在返回正常阶段流程...”，并清晰说明当前回到了哪个正常阶段或分析上下文。
 ```

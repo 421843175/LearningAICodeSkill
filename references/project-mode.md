@@ -1,6 +1,6 @@
 ---
 name: system-call-chain-analysis
-description: Analyze an unfamiliar software system or module in two gated passes: first produce L1-L2 macro topology plus L3 domain modules together, then after confirmation produce L4 business-scenario-driven call chains. Includes an optional Inspection Mode for architecture-interview-style questions and answers. Produces a Markdown handoff document under doc/project/PyyyyMMdd(<project-or-module>分析).md. Use when the user asks to understand a project, backend, architecture, modules, service interactions, call chains, deployment flow, wants a reusable way to ask AI to梳理系统, or says 你考我一下, 你问我一下, 进入考察模式, 退出考察.
+description: Analyze an unfamiliar software system or module in two gated passes: first produce L1-L2 macro topology plus L3 domain modules together, then after confirmation produce L4 business-scenario-driven call chains. Includes an optional Inspection Mode for architecture-interview-style questions and answers. Produces a Markdown handoff document under doc/project/PyyyyMMdd(<project-or-module>分析).md. Use when the user asks to understand a project, backend, architecture, modules, service interactions, call chains, deployment flow, wants a reusable way to ask AI to梳理系统, or says 进入考察模式, 退出考察. For ambiguous 你考我一下 / 你问我一下 triggers, obey the main SKILL.md Ambiguous Trigger Arbitration Rule first.
 ---
 
 # System Call Chain Analysis
@@ -27,12 +27,14 @@ Hard requirement: work in exactly these three stages, but stages 1 and 2 run con
 - First pass output must include both stage 1 and stage 2 in the same document: stage 1 covers L1-L2 macro topology, then stage 2 covers L3 domain modules.
 - Do not pause between stage 1 and stage 2.
 - After writing stage 2, stop and ask the user to reply `继续` before doing stage 3.
+- If the user interrupts the stage 2/3 pause with a question or request other than proceeding, answer that interruption normally within the allowed stage-2 granularity, but end the response with an explicit reminder that stage 3 is still pending and the user can reply `继续` to trigger it.
 - Stage 3 output covers L4 business-scenario-driven understanding. Only stage 3 may output `Class.method()`-level chains and scenario design analysis.
 - If stage 2 has not been completed and confirmed, do not output stage 3 details, even if the code has already been inspected.
+- If explain mode or any reader-friendly writing style is fused into project mode, this gate remains absolute. Narrative clarity may change wording only; it cannot justify early scenario maps, scenario design analysis, or method-level call-chain leakage before the `继续` checkpoint.
 
 ### 考察模式（Inspection Mode）- 可选分支机制
 
-Enter Inspection Mode whenever the user says `学习SKILL考察模式`, `考察模式`, `项目考察模式`, `进入考察模式`, `你考我一下`, `你问我一下`, or an equivalent request to be quizzed/interviewed about the analyzed system. After Stage 3 is fully completed, proactively ask whether the user wants to enter Inspection Mode.
+Enter Inspection Mode whenever the user says `学习SKILL考察模式`, `考察模式`, `项目考察模式`, `进入考察模式`, or an equivalent explicit request to be quizzed/interviewed about the analyzed system. For ambiguous `你考我一下` / `你问我一下` triggers, first obey the main `SKILL.md` `Ambiguous Trigger Arbitration Rule`; enter project Inspection Mode only when that arbitration routes to `doc/project/` or default project-inspection scope. After Stage 3 is fully completed, proactively ask whether the user wants to enter Inspection Mode.
 
 On trigger:
 
@@ -40,7 +42,7 @@ On trigger:
 2. Inspection questions must target the whole project's core logic and core principles, not isolated local code trivia.
 3. First response must output only question 1, then stop and wait.
 4. Do not simulate user answers, scores, templates, reference answers, or later questions in the same turn.
-5. Append only new Inspection Mode records under `# 考察模式`; if a question score is below 8, persist only the question and reference answer, not the user answer, score, or strengths/weaknesses evaluation. Do not rewrite `阶段一` through `阶段三`.
+5. During the active Inspection Mode round, do not write any file. After the user exits the round or explicitly asks to persist after exit, append only new Inspection Mode records under `# 考察模式`; if a question score is below 8, persist only the question and reference answer, not the user answer, score, or strengths/weaknesses evaluation. Do not rewrite `阶段一` through `阶段三`.
 6. When the user exits Inspection Mode, provide the 100-point overall review described in `references/rules/inspection-mode.md`; do not write that overall review to the document.
 
 ## Document Path
@@ -72,6 +74,10 @@ Load these bundled resources only when needed:
 
 Before stage 1, inspect enough to identify the project scope, document path, macro topology, and L3 domain/module structure: README, build files, package manifests, top-level directories, configs, entrypoints, deployment files, important source packages, core data objects, and storage/state nodes. Then write stages 1 and 2 in one pass.
 
+## Diagram/Text-Graph Stability Rule
+
+For stage 1 and stage 2 diagrams, prefer fenced `text` code blocks for topology and data/object-flow graphs. If Mermaid is used instead, strictly adhere to the Mermaid Diagram Stability Rules from the main `SKILL.md`: avoid complex syntax, quote text nodes safely, avoid unsupported arrows or nested constructs, and fall back to a fenced `text` diagram whenever the diagram is large, contains Chinese punctuation/parentheses, or may render unstably.
+
 ### Stage 1: 宏观拓扑（L1-L2）
 
 Goal: explain the system from the outside and at infrastructure/service level.
@@ -85,7 +91,7 @@ Do:
 2. 分析技术栈与基础设施拓扑：
    - 网关、前端、后端服务进程、定时任务、消费者、DB、MQ、缓存、文件/对象存储、外部系统之间的关系。
    - 入口端口、主要配置、启动方式、部署触点。
-   - 用文本图表达 L1-L2 拓扑。
+   - 用文本图表达 L1-L2 拓扑。默认使用 fenced `text` 代码块；如改用 Mermaid，必须严格遵守主 `SKILL.md` 的 Mermaid Diagram Stability Rules，避免复杂语法并确保中文节点安全加引号。
 3. 梳理项目运行与启动：
    - 启动入口、启动命令、运行模式、本地/容器/部署启动差异。
    - 必需依赖服务，如 DB、MQ、Redis、对象存储、外部 API、硬件设备或模拟器。
@@ -119,7 +125,7 @@ Do:
    - 本节写代码里的数据结构，例如 DTO/VO/Entity/message/event/config/request/response 对象。
    - 即使某个 `Entity` 映射数据库表，也先把 `OrderEntity` 这类代码对象放在本节；真实表名如 `t_order` 放到下一节的状态节点清单。
    - 对每个对象说明：它代表什么、由哪个模块创建、被哪个模块读取/转换/持久化/发布/返回，以及它携带的关键字段或状态值。
-   - 用文本图表达对象在模块间的流转。
+   - 用文本图表达对象在模块间的流转。默认使用 fenced `text` 代码块；如改用 Mermaid，必须严格遵守主 `SKILL.md` 的 Mermaid Diagram Stability Rules，避免复杂语法并确保中文节点安全加引号。
 3. 输出核心存储与状态节点清单：
    - 本节写系统状态承载点，不写 Java/TypeScript/Python 类名。判断标准：这个东西是否在单次本地函数调用之外保存、持有、控制或传递状态，并且会被一个或多个模块读写。
    - 包括持久化存储和运行时状态介质，例如 MySQL/PostgreSQL 表、Redis Key、MQ 队列/Topic、文件/对象存储路径、硬件寄存器、前端全局状态 Store、内存 Map、Session、Socket、锁、定时器或定时任务状态。
@@ -225,6 +231,7 @@ Important:
 ### 1.2 核心业务边界
 ### 1.3 技术栈与基础设施
 ### 1.4 L1-L2 总体拓扑文本图
+使用 fenced `text` 代码块；如使用 Mermaid，必须严格遵守主 `SKILL.md` 的 Mermaid Diagram Stability Rules。
 ### 1.5 当前阶段结论与待确认点
 ### 1.6 项目运行与启动
 
@@ -249,6 +256,7 @@ Important:
 | **前端状态** | `useAuthStore.hasLogined` | 全局响应式布尔值，控制全局路由守卫与鉴权 UI 显示 | `auth-views` (读) |
 | **运行时状态** | `runningConnections` | 进程内运行连接表，记录设备连接对象和当前运行态；服务重启后会丢失 | `gateway-ingest` (读写) |
 ### 2.4 DTO/VO/Entity/Message 流转文本图
+使用 fenced `text` 代码块；如使用 Mermaid，必须严格遵守主 `SKILL.md` 的 Mermaid Diagram Stability Rules。
 ### 2.5 当前阶段结论与待确认点
 
 ## 阶段三：业务场景驱动理解（L4）
@@ -288,7 +296,7 @@ NextClass.nextMethod() 【下一步作用】
 必须展开写，不能只列短 bullet。至少写两个实质性不足；每个不足都说明：风险/限制是什么、什么情况下会触发、会造成什么影响、可以怎么具体改进。若属于推测或建议，必须标明是推测/建议。
 ### 3.2 场景二：<场景名>
 
-<!-- 如果用户触发了考察模式，按 `references/rules/inspection-mode.md` 的 Document Append Format 在文档最末尾增量追加；否则不生成。 -->
+<!-- 如果用户触发了考察模式，活跃考察轮次内保持只读；退出后或用户明确要求持久化后，才按 `references/rules/inspection-mode.md` 的 Document Append Format 在文档最末尾增量追加。否则不生成。 -->
 ```
 
 ## Stage 3 Template Resource
@@ -347,10 +355,10 @@ Copy this when asking an AI to analyze a project:
 15. `潜在的不足之处` 至少写两个实质性点；每个点都要说明风险/限制是什么、什么情况下会触发、会造成什么影响、可以怎么具体改进。潜在不足必须聚焦于并发安全、单点故障、协议鲁棒性、内存泄漏风险、状态不一致、硬件阻塞、生命周期泄漏、背压、重试/幂等或运维可观测性等架构/工程权衡层面；不要用“代码注释不够”“没有写单元测试”这类泛泛问题凑数，除非它们会直接放大该场景的架构级风险。如果代码里没有明显问题，也要写出谨慎的工程权衡或潜在风险；若属于推测或建议，必须标明是推测/建议。
 
 【考察模式（可选切换）】
-1. 无论在任何时候，只要我输入“进入考察模式”“你考我一下”“你问我一下”，或者在阶段三完全结束后由你主动邀请并获得我确认，系统应立刻暂停当前的常规文档输出，读取并严格遵循 `references/rules/inspection-mode.md`。
+1. 当我输入“进入考察模式”，或者在阶段三完全结束后由你主动邀请并获得我确认，系统应立刻暂停当前的常规文档输出，读取并严格遵循 `references/rules/inspection-mode.md`。当我输入“你考我一下”“你问我一下”时，必须先遵循主 `SKILL.md` 的 `Ambiguous Trigger Arbitration Rule`：若当前是 `docs/learn/` 局部学习范围则进入学习测试模式；只有路由到 `doc/project/` 或默认项目考察范围时，才进入本项目考察模式。
 2. 考察范围是整个项目的核心逻辑和核心原理，不考局部代码记忆；问题应围绕业务目标、系统边界、核心闭环、模块协作、对象/数据流、状态流转、关键状态节点、异步/外部/设备/客户端接入链路和设计取舍展开。
 3. 切入考察模式后的首轮回复必须只输出第 1 个问题，然后立刻 Stop and wait，等待我回答；严禁在同一轮内自行模拟我的回答，严禁一次性把后续问题、评分格式、评价模板或参考答案都打出来。
-4. 追加考察记录时，只能增量追加新问题与反馈；如果某题低于 8 分，文档只保留该题题目和参考答案，不写用户回答、评分、足和不足；请勿重写、重排、润色或篡改文档前半部分的【阶段一】至【阶段三】已定稿系统架构分析内容。
+4. 活跃考察轮次内属于只读沙箱，不写任何物理文件。退出考察模式后或用户明确要求持久化后，追加考察记录时只能增量追加新问题与反馈；如果某题低于 8 分，文档只保留该题题目和参考答案，不写用户回答、评分、足和不足；请勿重写、重排、润色或篡改文档前半部分的【阶段一】至【阶段三】已定稿系统架构分析内容。
 5. 用户退出考察模式时，按 `references/rules/inspection-mode.md` 输出满分 100 分的总评；总评只展示给用户，不写入文档。
 请先读代码和配置，然后连续输出阶段一和阶段二；写完阶段二后暂停，等待我回复“继续”再执行阶段三。
 ```

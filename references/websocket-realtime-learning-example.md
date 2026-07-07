@@ -664,9 +664,13 @@ public final class JsonWebSocketStreamer {
     private static final Set<WebSocketSession> SESSIONS = ConcurrentHashMap.newKeySet();
 
     // 保存待批量推送的 RTCM 事件。
+    // 注意：ArrayDeque 本身不是线程安全的。
+    // 这里能用它，是因为下面所有 add/remove/size/clear 都必须放进同一把 BATCH_LOCK。
+    // 如果不想显式加锁，demo 或生产代码应改用 ConcurrentLinkedQueue 或 BlockingQueue。
     private static final ArrayDeque<JsonWebSocketMessage> BATCH_QUEUE = new ArrayDeque<>();
 
-    // 保护批量队列的锁，避免多线程同时操作队列出问题。
+    // 保护批量队列的锁，避免多线程同时操作 ArrayDeque 导致结构损坏、异常或极端情况下卡死。
+    // drop-oldest 这类“先判断容量、再删除旧元素、再插入新元素”的组合动作，也必须在这把锁里完成。
     private static final Object BATCH_LOCK = new Object();
 
     // 记录因为队列满而丢弃了多少展示事件。
@@ -1182,7 +1186,13 @@ import java.util.concurrent.TimeUnit;
 public final class DemoJsonWebSocketStreamer {
 
     private static final Set<WebSocketSession> SESSIONS = ConcurrentHashMap.newKeySet();
+    // ArrayDeque 不是线程安全队列。
+    // demo 选择它只是为了教学时能清楚展示队列头尾操作。
+    // 所有访问 QUEUE 的代码必须放进 QUEUE_LOCK；否则高频多线程 stream(...) 会破坏队列内部结构。
+    // 如果不想维护显式锁，应该改成 ConcurrentLinkedQueue 或 LinkedBlockingQueue。
     private static final ArrayDeque<DemoJsonWebSocketMessage> QUEUE = new ArrayDeque<>();
+    // 这把锁保护 QUEUE 的 add、remove、clear，以及未来可能加入的 size 判断和 drop-oldest 逻辑。
+    // 关键点是：检查容量、丢弃旧消息、插入新消息必须是同一个临界区里的原子过程。
     private static final Object QUEUE_LOCK = new Object();
     private static ObjectMapper objectMapper = new ObjectMapper().findAndRegisterModules();
     private static boolean batchEnabled = true;
@@ -1240,6 +1250,8 @@ public final class DemoJsonWebSocketStreamer {
 
         DemoJsonWebSocketMessage message = new DemoJsonWebSocketMessage(type, Instant.now(), payload);
         if (batchEnabled && type.startsWith("demo.data.")) {
+            // 高频数据可能来自多个 HTTP 请求线程、设备回调线程或解析线程。
+            // 因为 QUEUE 是 ArrayDeque，所以写入必须加锁，不能裸调用 QUEUE.addLast(...)。
             synchronized (QUEUE_LOCK) {
                 QUEUE.addLast(message);
             }
@@ -1266,6 +1278,8 @@ public final class DemoJsonWebSocketStreamer {
         }
 
         List<DemoJsonWebSocketMessage> items = new ArrayList<>();
+        // flush 线程和业务写入线程会同时碰 QUEUE。
+        // drain 批量元素时也必须拿同一把锁，避免一边 removeFirst、一边 addLast。
         synchronized (QUEUE_LOCK) {
             while (items.size() < maxItems && !QUEUE.isEmpty()) {
                 items.add(QUEUE.removeFirst());

@@ -1,6 +1,6 @@
 ---
 name: problem-learning-coach
-description: Teach the user through any technical or project problem in a beginner-friendly way. Use when the user asks to learn from a problem, understand why something happens, review architecture/design, understand code flow, create a learning document, explain a bug/fix, compare designs, or wants Codex to turn any encountered issue into a reusable learning lesson. Also use when the user explicitly says to use 学习SKILL/学习skill in 项目模式/project mode to analyze a whole project; says 学习SKILL测试模式/测试模式/学习测试模式/测一下我刚学的 to test the current learning document or recently learned topic; or says 学习SKILL考察模式/考察模式/项目考察模式 to run project-mode inspection over the whole project. If the user says 你考我一下/你问我一下, choose learning test mode when the current context is a learning document or recently learned topic, and choose project inspection mode when the current context is project mode or a project-analysis document. Normal learning output should be understandable to a new graduate, include project context when available, core code with comments, flow diagrams or call chains when useful, pros/cons, common pitfalls, and a complete minimal demo appended inside the Markdown learning document with detailed Chinese comments and a demo-based architecture diagram when applicable.
+description: Teach technical or project problems in beginner-friendly Chinese. Use for learning from a bug/fix, understanding code flow, architecture/design, tradeoffs, or creating reusable learning docs with project context, commented core code, flow diagrams, pitfalls, and minimal demos. Also use when the user says 学习SKILL/学习skill with 讲解模式/explain mode/启动讲解模式 to explain code, APIs, runtime principles, architecture, business logic, comparisons, or rewrite docs. 讲解模式 can be pure explain mode or a fused style layer over 学习模式/project mode while preserving that mode's workflow, document path, and structure. Also use for 项目模式/project mode whole-project analysis, 测试模式 to test learning docs, and 考察模式 to inspect project-mode understanding.
 ---
 
 # Problem Learning Coach
@@ -15,7 +15,43 @@ This skill is domain-agnostic. Use it for MQTT, Kafka, Redis, HTTP, WebSocket, d
 
 This section has the highest priority in this skill. Apply it before `Hard Safety Rule`, `Execution Phases`, `Default Workflow`, `Output Shape`, and `Minimal Demo Rules`.
 
+### Active Submode Permission Boundary
+
+When `测试模式（学习本体）` or `考察模式（项目模式子模式）` is active, that submode's read-only sandbox assertion has priority over this skill's general ability to discuss bugs, fixes, refactors, demos, or documentation. Do not let a mid-round user request such as `这个 bug 怎么修`, pasted code, config changes, test fixes, or reference-answer corrections escape the active submode's permissions.
+
+While either submode is active:
+
+- Do not create, rewrite, patch, modify, format, move, delete, stage, commit, or otherwise change any physical file.
+- Discuss bug/fix/code issues in chat only, or tell the user that real file edits require exiting the current test/inspection mode first.
+- Do not silently switch from the active submode into implementation mode. A real edit is a separate request after the submode ends.
+- Persistence records for test/inspection answers may be prepared in chat but must not be written to disk until the round has ended or the user explicitly asks to persist after exit.
+
+### Ambiguous Trigger Arbitration Rule
+
+When the user says `你考我一下` or `你问我一下`, these ambiguous triggers must be routed by current scope target before any other mode rule. Never choose both learning test mode and project inspection mode in the same turn. Never fuse the two modes.
+
+Route in this exact priority order:
+
+1. If the current conversation, newest user request, current document, or immediately previous action is about a local learning document under `docs/learn/`, a normal learning topic, a minimal demo, or a recently learned local concept, route to `测试模式（学习本体）`. Read and strictly follow `references/rules/learning-test-mode.md`.
+2. Else if the current conversation, newest user request, current document, or immediately previous action is about a project analysis document under `doc/project/`, project mode, whole-project architecture, Stage 1/2/3 project analysis, or project-mode scenario/call-chain analysis, route to `考察模式（项目模式子模式）`. Read `references/project-mode.md` for context and strictly follow `references/rules/inspection-mode.md`.
+3. Else if no local learning document scope is clear, route to `考察模式（项目模式子模式）` by default. The ambiguous phrase should test whole-project understanding unless a `docs/learn/` scope is clearly active.
+4. If both a `docs/learn/` learning document and a `doc/project/` project-analysis document are visible in the conversation, the immediately previous user-facing task decides the scope. If the previous task was appending or discussing a learning document/demo, choose learning test mode. If it was appending or discussing project analysis, choose project inspection mode.
+5. Ask a clarification question only when the current scope cannot be inferred from the conversation or files after a brief inspection. The clarification must be a single short question, and no test/inspection question may be asked until the user chooses the scope.
+
 If the user does not name a mode, execute the normal Problem Learning Coach workflow in this `SKILL.md`.
+
+### 讲解模式融合规则
+
+讲解模式 is both a standalone workflow and a style/organization layer that can be fused into another mode.
+
+First decide the primary workflow, then decide whether to apply explain-mode writing style:
+
+1. If the user combines `讲解模式` with `项目模式`, such as `这个项目用讲解模式讲解一下` or `参考项目模式输出风格和组织的语言用讲解模式`, use project mode as the primary workflow. Read `references/project-mode.md` and preserve its stage gates, document path, required headings, and output structure. Also read `references/explain-mode.md` and apply its reader-first Chinese narrative style inside the project-mode structure. Under this fusion, the project-mode Stage Gate Rule is absolute: explain mode must not introduce Stage 3 scenario maps, scenario design analysis, or `Class.method()` call chains before Stage 2 is complete and the user confirms `继续`.
+2. If the user combines `讲解模式` with the normal learning workflow, such as `使用学习SKILL 这个东西用学习模式融合讲解模式讲解一下`, use the normal Problem Learning Coach workflow in this `SKILL.md`. Preserve `docs/learn/`, the staged learning phases, learning-document structure, learning-focus confirmation, and minimal-demo rules. Also read `references/explain-mode.md` and apply its reader-first Chinese narrative style inside those sections.
+3. If the user only asks for `启动讲解模式`, `讲解模式`, `学习SKILL讲解模式`, `学习skill explain mode`, `用学习SKILL讲解一下`, or asks for a reader-friendly explanation without requesting project mode or the staged learning workflow, use pure explain mode. Do not execute the normal Problem Learning Coach workflow, and do not create or update `docs/learn/` unless the user explicitly asks to turn the explanation into a learning document. Pure explain mode creates or updates a Markdown explanation document under `docs/explain/` by default, unless the lightweight chat-only exception in `references/explain-mode.md` applies.
+4. In pure explain mode, read and follow `references/explain-mode.md` as the operative workflow. Let the user's requested topic decide the explanation shape: code usage, code design, principle/runtime, architecture/design pattern, comparison, or documentation rewrite. When the topic relates to the current workspace or recently inspected project files, ground the explanation in the current project's actual implementation instead of giving only a generic explanation.
+5. In pure explain mode, use the explain-mode document path and filename rules from that reference: `docs/explain/[E]yyyyMMdd-讲解XXXX.md` unless the lightweight chat-only exception applies. A chat summary may accompany the file, but it does not replace the required document when a document is required.
+6. In fused mode, explain mode changes writing style, reading path, evidence framing, and narrative organization only. It must not override the primary mode's required output path, stage gates, persistence rules, document headings, demo rules, or test/inspection behavior. When fused with project mode, keep narrative detail at the current stage's allowed granularity; if a detail belongs to Stage 3, write `这个细节属于阶段三，等你回复“继续”后再展开。` instead of leaking it early.
 
 ### 项目模式
 
@@ -30,7 +66,7 @@ When the user says `用学习SKILL走项目模式`, `学习SKILL 项目模式`, 
 
 ### 测试模式（学习本体）
 
-When the user says `学习SKILL测试模式`, `测试模式`, `学习测试模式`, `测一下我刚学的`, or says `你考我一下` / `你问我一下` while the current context is a learning document or recently learned topic:
+When the user says `学习SKILL测试模式`, `测试模式`, `学习测试模式`, `测一下我刚学的`, or when `Ambiguous Trigger Arbitration Rule` routes `你考我一下` / `你问我一下` to a `docs/learn/` learning scope:
 
 1. Treat it as the normal learning skill's test mode, not as project-mode Inspection Mode.
 2. Test the current learning document, latest relevant `docs/learn/LyyyyMMdd(...).md`, or recently discussed learning topic.
@@ -38,11 +74,12 @@ When the user says `学习SKILL测试模式`, `测试模式`, `学习测试模�
 4. Do not read or write `doc/project/` unless the user explicitly switches to `考察模式` or `项目模式`.
 5. Read and strictly follow `references/rules/learning-test-mode.md`.
 6. On entering the mode, output only question 1, then stop and wait for the user's answer.
-7. Persist answered questions according to `references/rules/learning-test-mode.md`; when a learning document exists, append under `# 测试模式` in that same document.
+7. During the active test round, treat the mode as an absolute read-only sandbox. Do not modify any file, including the learning document itself.
+8. Persist answered questions only according to `references/rules/learning-test-mode.md` after the round has ended or after an explicit post-exit persistence request. Default persistence must go to a separate `docs/learn/tests/[T]yyyyMMdd-XXXX-测试记录.md` file, not into the source learning document. Append into the source learning document only if the user explicitly asks, and then use the folded `<details>` format from the test-mode reference.
 
 ### 考察模式（项目模式子模式）
 
-When the user says `学习SKILL考察模式`, `考察模式`, `项目考察模式`, `进入考察模式`, or says `你考我一下` / `你问我一下` while the current context is project mode or a project-analysis document:
+When the user says `学习SKILL考察模式`, `考察模式`, `项目考察模式`, `进入考察模式`, or when `Ambiguous Trigger Arbitration Rule` routes `你考我一下` / `你问我一下` to a `doc/project/` or default project-inspection scope:
 
 1. Treat it as the project mode's Inspection Mode over the whole project, not as a learning-document test.
 2. Do not execute the normal Problem Learning Coach workflow.
@@ -51,7 +88,8 @@ When the user says `学习SKILL考察模式`, `考察模式`, `项目考察模�
 5. If a `doc/project/PyyyyMMdd(<项目或模块名>分析).md` analysis document already exists for the current project/context, use it as the grounding document for questions and persistence.
 6. If no project-analysis document exists or the analyzed project/module is ambiguous, inspect the current project enough to ask a grounded first question, and ask concise clarification only when the target project cannot be safely identified.
 7. On entering the mode, output only question 1, then stop and wait for the user's answer.
-8. Persist answered questions according to `references/rules/inspection-mode.md`; do not write project inspection records into `docs/learn/`.
+8. During the active inspection round, treat the mode as an absolute read-only sandbox. Do not modify any file, including the project analysis document itself.
+9. Persist answered questions only according to `references/rules/inspection-mode.md` after the round has ended or after an explicit post-exit persistence request; do not write project inspection records into `docs/learn/`.
 
 ## Hard Safety Rule
 
@@ -85,12 +123,13 @@ Mode references:
 
 ```text
 references/project-mode.md
+references/explain-mode.md
 references/rules/learning-test-mode.md
 references/rules/inspection-mode.md
 references/templates/call-chain-template.md
 ```
 
-Load these only when `Mode Routing` selects project mode, learning test mode, or project inspection mode.
+Load these only when `Mode Routing` selects or fuses explain mode, project mode, learning test mode, or project inspection mode.
 
 ## Execution Phases
 
@@ -193,7 +232,7 @@ The user may stop at any phase. If the user says `停止`, `先到这里`, `不�
    - In every minimal-demo code block, every code statement must have a Chinese comment; do not leave uncommented executable statements, declarations, configuration lines, or commands.
    - Hard requirement: every line comment must be placed on the immediately preceding line of the related code or configuration; do not write same-line trailing comments.
    - Add a small architecture diagram based on the demo itself before the code, preferably Mermaid when Markdown output supports it.
-   - Mermaid diagram node names that contain Chinese or special characters should be wrapped in double quotes, such as `A["1. 接收 MQTT 消息"] --> B["2. 写入 Redis"]`, to keep the diagram readable.
+   - Follow `Mermaid Diagram Stability Rules` for every Mermaid diagram.
    - Explain how the user can manually run or call it outside the current project.
    - End by telling the user they can stop here, ask questions, or say `追加学习 XXX`.
 
@@ -224,10 +263,10 @@ Prefer this structure for learning documents:
 ## 8. 接口或运行说明
 ## 9. 学习重点确认
 ## 10. 最小化demo（关于XXX）（用户确认学习主题后追加到本文档）
-## 10.1 demo 技术栈和完整性说明
-## 10.2 企业级规则判断
-## 10.3 基于 demo 的架构图
-## 10.4 按开发顺序展示文件内容
+## 10.1 核心技术栈与完整性说明
+## 10.2 行业及企业级可信规则边界判断（先把当前的差距盘清楚）
+## 10.3 基于 Demo 的拓扑架构图（Mermaid）
+## 10.4 核心代码工程化文件展示（含逐行前置注释）
 ## 10.5 手动运行命令、预期结果和原项目对应关系
 ## 10.6 做足的地方和不足
 ## 11. 下次遇到怎么判断
@@ -239,6 +278,41 @@ Prefer this structure for learning documents:
 Always create or update a Markdown learning document under `docs/learn/` unless the user gives another path. If `docs/learn/` does not exist, create it before writing the document. Use the filename format `Lyyyymmdd(文档学习什么).md`, where `yyyymmdd` is the current date and the parentheses contain a short Chinese learning topic, for example `docs/learn/L20260610(学习8080和8082数据获取).md`. A brief chat summary may accompany it, but it does not replace the document. The document must focus on the exact topic the user asked to learn, not on a canned example or prior reference topic.
 
 Every learning document must include sections up through `学习重点确认` before asking the user what to learn deeply. Only append the `最小化demo（关于XXX）` section after the user confirms the learning focus, and replace `XXX` with the confirmed topic, such as `Kafka原始数据链路`, `8082 NMEA切行和GSV解码`, or `RTCM帧解析`. The demo may use simulated/mock data when real infrastructure, devices, brokers, databases, or third-party services are unavailable, but it must be represented entirely inside the Markdown document as complete file contents, commands, expected output, and original-project mapping. Do not create demo files or modify project files for the demo.
+
+## Mermaid Diagram Stability Rules
+
+When writing Mermaid diagrams in learning documents, minimal demos, or explain-mode fused outputs:
+
+- Use only the stable flowchart forms `graph TD` or `graph LR`.
+- Prefer `graph TD` for step-by-step processing and `graph LR` for left-to-right architecture/data-flow diagrams.
+- Define every node with a short ASCII node ID and a quoted label, such as `A["1. 接收 MQTT 消息"]`.
+- Wrap every label containing Chinese, spaces, punctuation, parentheses, slashes, colons, protocol names, API paths, or other special characters in double quotes.
+- Connect nodes with plain `-->` only.
+- If an edge needs a label, use only the Mermaid edge-label format `-->|描述|`, such as `A -->|写入队列| B`.
+- Do not use mixed arrow styles such as `--描述-->`, `-.->`, `==>`, `---`, or chained syntax that combines several edge styles in one line.
+- Do not use `subgraph`, `end`, `classDef`, `style`, click handlers, icons, HTML tags, raw Markdown links, or complex Mermaid features in learning diagrams unless the user explicitly asks for advanced Mermaid.
+- Keep one connection per line. Do not write dense chains such as `A --> B --> C` when labels or Chinese text are involved; split them into separate lines.
+- If the diagram becomes complex enough to require nested groups, replace it with a plain `text` call-chain diagram instead of risking Mermaid render failure.
+- Prefer clear node labels over clever edge labels. When in doubt, put the explanation in the node label or in prose below the diagram.
+
+Stable example:
+
+```mermaid
+graph TD
+    A["1. 接收 RTCM 原始字节"] --> B["2. 提取候选帧"]
+    B -->|校验通过| C["3. 解码业务消息"]
+    B -->|校验失败| D["4. 记录错误并丢弃"]
+    C --> E["5. 推送到前端批量队列"]
+```
+
+Avoid:
+
+```mermaid
+graph TD
+    subgraph RTCM解析
+    A[接收 RTCM] --校验通过--> B(解码/推送)
+    end
+```
 
 Hard requirement for `易踩坑和优秀实践（✔）` and `潜在不足与演进（×）` sections:
 
@@ -339,7 +413,7 @@ A minimal demo is required after the user confirms the learning focus and should
 
 - Remove unrelated business complexity.
 - Preserve the key idea.
-- Before writing demo code, add an `企业级规则判断` subsection to the learning document. Judge the current project's implementation for the exact demo focus against the relevant enterprise-grade rules for that domain, and state whether it is `符合`, `部分符合`, or `不符合`.
+- Before writing demo code, add the subsection `行业及企业级可信规则边界判断（先把当前的差距盘清楚）` to the learning document. Judge the current project's implementation for the exact demo focus against the relevant industry and enterprise-grade trust-boundary rules for that domain, and state whether it is `符合`, `部分符合`, or `不符合`.
 - If the current project is `符合`, make the demo teaching code follow the project's enterprise-grade design. Do not simplify away the key safety, reliability, validation, trust-boundary, resource-boundary, observability, idempotency, concurrency, or failure-handling rule that makes the real project enterprise-grade.
 - If the current project is `部分符合` or `不符合`, first show a demo that faithfully matches the current project so the user understands the code they have, then add `企业级补强方案` describing what a production-grade version should add and why.
 - Every minimal demo must include `做足的地方` and `不足或边界`, even when the current project is enterprise-grade. The user should learn both what is correct and what is intentionally simplified.
@@ -348,9 +422,11 @@ A minimal demo is required after the user confirms the learning focus and should
 - Never create a demo project directory or standalone demo files in the repository.
 - Include build/config file contents, source file contents, one client/request/example invocation, exact manual run commands, and expected output.
 - Use mock or in-memory replacements for infrastructure when that keeps the demo complete and easy to run manually, such as in-memory queues instead of Kafka, fake payloads instead of real devices, or H2 instead of MySQL.
+- Hard requirement: when a demo teaches high-frequency data links, realtime streams, WebSocket batching, RTCM/NMEA/IoT/device ingestion, MQ-like buffering, scheduled flushing, or any flow where multiple producer threads may enqueue data, the in-memory queue must be concurrency-safe. Prefer `ConcurrentLinkedQueue`, `LinkedBlockingQueue`, `ArrayBlockingQueue`, or an equivalent framework-provided thread-safe queue. If the demo uses `ArrayDeque`, `LinkedList`, `ArrayList`, or another non-thread-safe collection as a queue, every compound operation such as checking size, applying `drop-oldest`, adding, polling, clearing, or draining must happen inside the same explicit lock or synchronized critical section. Never show an unprotected `ArrayDeque` for multi-threaded enqueue/flush paths.
+- Hard requirement: for high-frequency queue demos, the `行业及企业级可信规则边界判断（先把当前的差距盘清楚）` subsection must explicitly judge producer/consumer concurrency safety, bounded memory, overflow policy such as `drop-oldest`, backpressure or degradation behavior, and observability of queue size/drop counts. A demo that ignores thread safety for the queue must be judged `不符合`, even if it is only a simplified teaching demo.
 - Do not actually run, compile, test, scaffold, or validate the demo. Record this explicitly as a skill rule, then provide complete manual run commands and expected output so the user can execute it manually outside the current project.
 - Start with a small architecture diagram based on the demo, showing actors, entrypoints, core classes/functions, queues/storage/network boundaries, and output.
-- Mermaid diagram node names that contain Chinese or special characters should be wrapped in double quotes, such as `A["1. 接收 MQTT 消息"] --> B["2. 写入 Redis"]`, to keep the diagram readable.
+- Follow `Mermaid Diagram Stability Rules` for every Mermaid diagram.
 - Hard requirement: when the learning topic comes from an existing project, inspect the current project's build/config files before writing the demo, such as `pom.xml`, `build.gradle`, `package.json`, `pyproject.toml`, `go.mod`, `Cargo.toml`, `.java-version`, `.nvmrc`, or framework config files. The demo text must use the same primary development language and language version as the current project whenever that information is available. It should also mirror the project's framework and dependency style, such as Maven vs Gradle, Spring Boot vs plain Java, npm vs pnpm, or FastAPI vs Flask. If the version cannot be determined from local files, state the assumption explicitly in the learning document before the demo.
 - If the demo is based on a real project, first summarize that project's relevant conventions and then mirror them in the demo:
   - module layout, such as parent module plus app module,
@@ -388,6 +464,16 @@ Do not make the demo bigger than the lesson.
 ## Enterprise-Grade Demo Judgment Rules
 
 When the demo topic touches a domain with correctness or reliability risks, judge the current project against that domain before writing the demo. Examples include TCP, serial ports, MQTT payloads, Kafka consumers, binary protocols, NMEA, RTCM, industrial internet/device ingestion, databases, security, concurrency, scheduling, money, permissions, and user data.
+
+For high-frequency data-link, realtime-streaming, WebSocket batching, MQ-like buffering, RTCM/NMEA/IoT/device-ingestion, or producer/consumer demos, the judgment must check at least:
+
+- The enqueue path is safe when called by multiple threads, request handlers, socket sessions, consumers, schedulers, or device callbacks.
+- The queue data structure is thread-safe, such as `ConcurrentLinkedQueue`, `BlockingQueue`, or an equivalent framework queue; or every access to a non-thread-safe queue such as `ArrayDeque` is protected by one shared lock.
+- Compound queue operations are atomic under concurrency, especially `size` check plus `drop-oldest`, `add`, `poll`, `drain`, `clear`, and stats updates.
+- The queue is bounded by configuration or policy, and the demo explains what happens when it reaches the limit.
+- Overflow behavior is explicit, such as drop-oldest, reject-new, block producer, batch-compress, or spill to durable middleware. The demo must explain which data can be lost and why that is acceptable or unacceptable.
+- Queue size, drop count, flush interval, batch size, and error count are observable in logs, metrics, status API, or expected output.
+- If every message is business-critical and cannot be lost, the demo must not present an in-memory dropping queue as production-grade; it must recommend reliable middleware, durable storage, idempotency, retry, or consumer offset tracking.
 
 For protocol/device-ingestion topics, the judgment must check at least:
 
